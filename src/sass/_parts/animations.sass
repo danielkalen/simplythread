@@ -1,0 +1,114 @@
++keyframesTransform(spin, $map:(100%: rotate(360deg)))
+
+
++keyframes(fadeslow)
+	0%
+		opacity: 0
+	50% 
+		opacity: 1
+	100% 
+		opacity: 0
+
++keyframes(animateSuccessTip, $ms:false)
+	0%
+		width: 0
+		left: 0px
+		top: 3px
+	54%
+		width: 0
+		left: 0px
+		top: 3px
+	70%
+		width: 14px
+		left: -2px
+		top: 8px
+	84%
+		width: 5px
+		left: 5px
+		top: 10px
+	100%
+		width: 8px
+		left: 3px
+		top: 10px
+
+
+
++keyframes(animateSuccessLong, $ms:false)
+	0%
+		width: 0
+		right: 12px
+		top: 12px
+	65%
+		width: 0
+		right: 12px
+		top: 12px
+	84%
+		width: 14px
+		right: 0px
+		top: 7px
+	100%
+		width: 12px
+		right: 2px
+		top: 8px
+
+
+
+
+
++keyframes(animateError, $all:false)
+	0%
+		transform: scale(0.4)
+		opacity: 0
+	65%
+		transform: scale(0.4)
+		opacity: 0
+	84%
+		transform: scale(1.15)
+	100%
+		transform: scale(1)
+
+
++keyframes-webkit(animateError)
+	0%
+		-webkit-transform: scale(0.4)
+		opacity: 0
+	65%
+		-webkit-transform: scale(0.4)
+		opacity: 0
+	84%
+		-webkit-transform: scale(1.15)
+	100%
+		-webkit-transform: scale(1)
+
+
+
+
++keyframesTransform(rotatePlaceholder, $map:(0%:rotate(-45deg), 5%:rotate(-45deg), 12%:rotate(-405deg), 100%:rotate(-405deg)))
+
+
++keyframesTransform(shakeyTransform, $map:(0%:translateX(-10px), 25%:translateX(10px), 50%:translateX(-10px), 75%:translateX(10px), 100%:translateX(0px) ))
++keyframes(shakey)
+	0%  
+		left: -10px
+	25% 
+		left: 10px
+	50% 
+		left: -10px
+	75% 
+		left: 10px
+	100% 
+		left: 0px
+
+
+
+
+
++keyframes(touchanimate)
+	0% 
+		+size(10)
+		opacity: 0
+	50%
+		opacity: 0.6
+	100% 
+		opacity: 0
+		+size(65) 

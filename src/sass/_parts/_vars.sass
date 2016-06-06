@@ -1,0 +1,561 @@
+// ==== Proper Syntax for background shorthand =================================================================================
+	// background:
+	//   [background-image]
+	//   [background-position]
+	//   [/ background-size]
+	//   [background-repeat]
+	//   [background-attachment]
+	//   [background-origin]
+	//   [background-clip]
+	//   [background-color]
+
+
+=maxmin($maxsize: 760, $minsize: 760, $maxdimension:width, $mindimension:width)
+	@media screen and (max-#{$maxdimension}: #{$maxsize}px) and (min-#{$mindimension}: #{$minsize}px)
+		@content
+
+
+// ==== Color =================================================================================
+$primary: #fff
+$contrast: #000
+$text: #000
+$grey: #a2a3a5
+$grey-dark: #7a7a7a
+$grey-mid: #adaeb0
+$grey-mid-light: #bebfc0
+$grey-light: #909090
+$grey-lighter: #e6e6e6
+$divider: $grey-lighter
+$divider-dark: $grey-mid-light
+$white: #fbfbfb
+$subwhite: #f1f1f1
+$subberwhite: #f5f5f5
+$black: #181818
+$pros: #72c322
+$cons: #cc4820
+
+$error: #cc4820
+$error-dark: #95190c
+$success: #72c322
+$success-dark: #4cb944
+$info: #c6c5c5
+$warning: #e3b505
+
+$iconfamily: bccons
+
+
+
+$facebook: #3b5998
+$googleplus: #d34836
+$twitter: #55acee
+$linkedin: #0077b5
+$stumbleupon: #f74425
+
+
+// ==== snippet mixins =================================================================================
+=overflow-touch
+	-webkit-overflow-scrolling: touch
+
+=tap-highlight-reset
+	-webkit-tap-highlight-color: rgba(0,0,0,0)
+
+=tap-highlight
+	-webkit-tap-highlight-color: rgba(0,0,0,0.2) !important
+
+=tap-color
+	+tap-highlight-reset
+
+=tap-highlight-manual($pseudo: 'before')
+	position: relative
+	&:active:#{$pseudo}
+		content: ''
+		position: absolute
+		+balign
+		border-radius: 4px
+		width: 100%
+		height: 100%
+		padding: 4px
+		background-color: rgba(0,0,0,0.2)
+
+=tap-animate($pseudo: 'before', $rgb: 0, $opacity: 0.35, $position: relative)
+	position: $position
+	&:#{$pseudo}
+		content: ''
+		position: absolute
+		+balign
+		background-color: rgba($rgb,$rgb,$rgb,$opacity)
+		border-radius: 50%
+		display: block
+	&.animate-tap:#{$pseudo}
+		-webkit-animation: touchanimate 0.3s
+		-moz-animation: touchanimate 0.3s
+		animation: touchanimate 0.3s
+
+=inc-tap-area($padding: 13px, $manualPseudo: 'false', $pseudo: 'after')
+	@if $manualPseudo == 'false'
+		position: relative
+		&:#{$pseudo}
+			content: ''
+			position: absolute
+			z-index: 1
+			+balign
+			width: 100%
+			height: 100%
+			padding: $padding
+			// background-color: rgba(0,0,0,0.2)
+	@else
+		content: ''
+		position: absolute
+		z-index: 1
+		+balign
+		width: 100%
+		height: 100%
+		padding: $padding
+		// background-color: rgba(0,0,0,0.2)
+
+=make-untouchable
+	+user-select(none)
+	pointer-events: none
+
+=optimize-animation
+	+transform(translate3d(0,0,0))
+	-webkit-transform-style: preserve-3d
+	-webkit-backface-visibility: hidden
+
+=remove-appearance
+	-webkit-appearance: none !important
+	-moz-appearance: none !important
+	-ms-appearance: none !important
+	-o-appearance: none !important
+	appearance: none !important
+	outline: none !important
+	box-shadow: none !important
+	text-shadow: none !important
+
+
+// ==== general mixinx =================================================================================
+=m($size: 760, $max: max, $dimension:width)
+	@media screen and (#{$max}-#{$dimension}: #{$size}px)
+		@content
+
+=min($size: 760, $dimension:width)
+	@media screen and (min-#{$dimension}: #{$size}px)
+		@content
+
+=max($size: 760, $dimension:width)
+	@media screen and (max-#{$dimension}: #{$size}px)
+		@content
+
+=maxmin($maxsize: 760, $minsize: 760, $maxdimension:width, $mindimension:width)
+	@media screen and (max-#{$maxdimension}: #{$maxsize}px) and (min-#{$mindimension}: #{$minsize}px)
+		@content
+
+// =e($element)
+//   &-#{$element}
+//     @content
+
+=center($top: 0, $bottom: 0, $important: '')
+	@if $top == 0 and $bottom == 0
+		@if $important != ''
+			margin: 0 auto !important 
+		@else
+			margin: 0 auto
+	@else
+		@if $important != ''
+			margin: #{$top} auto #{$bottom} !important
+		@else
+			margin: #{$top} auto #{$bottom}
+
+=valign($top: 50%)
+	top: $top
+	-webkit-transform: translateY(-50%)
+	-moz-transform: translateY(-50%)
+	-ms-transform: translateY(-50%)
+	-o-transform: translateY(-50%)
+	transform: translateY(-50%)
+
+=halign($left: 50%)
+	left: $left
+	-webkit-transform: translateX(-50%)
+	-moz-transform: translateX(-50%)
+	-ms-transform: translateX(-50%)
+	-o-transform: translateX(-50%)
+	transform: translateX(-50%)
+
+=balign($top: 50%, $left: 50%)
+	top: $top
+	left: $left
+	-webkit-transform: translateX(-50%) translateY(-50%)
+	-moz-transform: translateX(-50%) translateY(-50%)
+	-ms-transform: translateX(-50%) translateY(-50%)
+	-o-transform: translateX(-50%) translateY(-50%)
+	transform: translateX(-50%) translateY(-50%)
+
+=unvalign
+	top: 0
+	-webkit-transform: translateY(0)
+	-o-transform: translateY(0)
+	transform: translateY(0)
+
+=ratio($percentual-height, $content-fix: true)
+	// Wrapper
+	position: relative
+	display: block
+	vertical-align: top
+	&:after
+		padding-top: $percentual-height
+		content: ''
+		display: block
+	// Content
+	@if $content-fix == true
+		> *
+			position: absolute
+			top: 0
+			left: 0
+			bottom: 0
+			right: 0
+
+=size($width, $height: $width)
+	width: #{$width}px
+	height: #{$height}px
+
+=inheritSize($width:true, $height: true)
+	@if $width
+		width: 100%
+	@if $height
+		height: 100%	
+
+=clearfix
+	&:before,
+	&:after
+		content: ""
+		display: table
+	&:after
+		clear: both
+
+=ellipsis($width: 100%)
+	display: inline-block
+	max-width: $width
+	overflow: hidden
+	text-overflow: ellipsis
+	white-space: nowrap
+	word-wrap: normal
+
+=hyphens($opt)
+	-webkit-hyphens: $opt
+	-moz-hyphens: $opt
+	-o-hyphens: $opt
+	hyphens: $opt
+
+=user-select($opt)
+	-webkit-user-select: $opt
+	-khtml-user-select: $opt
+	-moz-user-select: $opt
+	-ms-user-select: $opt
+	user-select: $opt
+
+=linear-gradient($fromColor, $toColor)
+	background-color: $toColor
+	background-image: -webkit-gradient(linear, left top, left bottom, from($fromColor), to($toColor))
+	background-image: -webkit-linear-gradient(top, $fromColor, $toColor)
+	background-image: -moz-linear-gradient(top, $fromColor, $toColor)
+	background-image: -ms-linear-gradient(top, $fromColor, $toColor)
+	background-image: -o-linear-gradient(top, $fromColor, $toColor)
+	background-image: linear-gradient(top, $fromColor, $toColor)
+	filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0,StartColorStr='#{$fromColor}', EndColorStr='#{$toColor}')
+
+=appearance($appearance: none)
+	-webkit-appearance: $appearance
+	-moz-appearance: $appearance
+	-ms-appearance: $appearance
+	-o-appearance: $appearance
+	appearance: $appearance
+
+=transition($transition)
+	-webkit-transition: $transition
+	-moz-transition: $transition
+	transition: $transition
+
+
+=transitionTransform($time:0.25s, $additional:false)
+	// $transformTransition: transform $time, -ms-transform $time, -moz-transform $time, -webkit-transform $time
+	$transformTransition: transform $time, -webkit-transform $time
+	@if $additional
+		transition: $transformTransition, $additional
+	@else
+		transition: $transformTransition
+
+
+=tooltip($side: 'top', $margin: 33px)
+	position: absolute
+	z-index: 10
+	@if $side == 'top'
+		+halign
+		top: $margin
+	@if $side == 'bottom'
+		+halign
+		bottom: $margin
+	@if $side == 'right'
+		+valign
+		right: $margin
+	@if $side == 'left'
+		+valign
+		left: $margin
+	display: block
+	padding: 6px 8px 5px
+	border-radius: 2px
+	background-color: #181818
+	font-family: avenir
+	font-weight: 700
+	line-height: 1
+	font-size: 10px
+	letter-spacing: .4px
+	text-transform: uppercase
+	color: white
+	+arrow($side: $side, $align: "center", $size: 5px, $color: #181818, $borderColor: "none", $borderSize: 3px)
+	opacity: 0
+	visibility: hidden
+	transition: opacity 0.2s, visibility 0.2s
+
+=tooltip-hover
+	visibility: visible
+	opacity: 1
+	transition: opacity 0.20s linear 0.25s, visibility 0.20s linear 0.25s
+
+
+=transform($transforms) 
+	-moz-transform: $transforms
+	-o-transform: $transforms
+	-ms-transform: $transforms
+	-webkit-transform: $transforms
+	transform: $transforms
+
+=transform-origin($transforms) 
+	-moz-transform-origin: $transforms
+	-o-transform-origin: $transforms
+	-ms-transform-origin: $transforms
+	-webkit-transform-origin: $transforms
+	transform-origin: $transforms
+
+
+=filter($filters)
+	-webkit-filter: $filters
+	-moz-filter: $filters
+	-ms-filter: $filters
+	-o-filter: $filters
+	filter: $filters
+
+
+=user-select($opt)
+	-webkit-user-select: $opt
+	-khtml-user-select: $opt
+	-moz-user-select: $opt
+	-ms-user-select: $opt
+	user-select: $opt
+
+
+=icon($iconname)
+	content: $iconname
+	font-family: $iconfamily
+	line-height: 1
+
+
+
+
+
+=arrow_helper($arrowSize, $arrowColor, $margin, $side, $align)
+	@if $side == "top"
+		border-bottom-color: $arrowColor
+		top: -2 * $arrowSize
+	@if $side == "bottom"
+		border-top-color: $arrowColor
+		bottom: -2 * $arrowSize
+	@if $side == "left"
+		border-right-color: $arrowColor
+		left: -2 * $arrowSize
+	@if $side == "right"
+		border-left-color: $arrowColor
+		right: -2 * $arrowSize
+	@if $side == "right" or $side == "left"
+		@if $align == "center"
+			top: 50%
+			margin-top: -$arrowSize
+		@else if $align == "top"
+			top: $margin
+		@else if $align == "bottom"
+			bottom: $margin
+	@if $side == "bottom" or $side == "top"
+		@if $align == "center"
+			right: 50%
+			margin-right: -$arrowSize
+		@else if $align == "left"
+			left: $margin
+		@else if $align == "right"
+			right: $margin
+
+=arrow($side: "right", $align: "center", $size: 20px, $color: #f6f6f6, $borderColor: "none", $borderSize: 3px)
+	$selector: "&:after, &:before"
+	@if $borderColor == "none"
+		$selector: "&:after"
+	#{$selector}
+		border: solid transparent
+		content: " "
+		height: 0
+		width: 0
+		position: absolute
+		pointer-events: none
+		visibility: visible
+	&:after
+		border-width: $size
+		+arrow_helper($size, $color, $size, $side, $align)
+	@if $borderColor != "none"
+		&:before
+			border-width: $borderSize + $size
+			+arrow_helper($size + $borderSize, $borderColor, $size - $borderSize, $side, $align)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ==== Animations =================================================================================
+=keyframes($name, $ms:true, $moz:true, $webkit:true, $all:true)
+	@keyframes #{$name}
+		@content
+
+	@if $ms and $all
+		+keyframes-ms($name)
+			@content
+	@if $moz and $all
+		+keyframes-moz($name)
+			@content
+	@if $webkit and $all
+		+keyframes-webkit($name)
+			@content
+
+=keyframes-ms($name)
+	@-ms-keyframes #{$name}
+		@content
+
+=keyframes-moz($name)
+	@-moz-keyframes #{$name}
+		@content
+
+=keyframes-webkit($name)
+	@-webkit-keyframes #{$name}
+		@content
+
+
+
+
+
+=keyframesTransform($name, $map)
+	@keyframes #{$name}
+		@each $stage, $transform in $map
+			#{$stage}
+				transform: $transform
+	
+	@-ms-keyframes #{$name}
+		@each $stage, $transform in $map
+			#{$stage}
+				-ms-transform: $transform
+	
+	@-moz-keyframes #{$name}
+		@each $stage, $transform in $map
+			#{$stage}
+				-moz-transform: $transform
+	
+	@-webkit-keyframes #{$name}
+		@each $stage, $transform in $map
+			#{$stage}
+				-webkit-transform: $transform
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ==== Functions =================================================================================
+
+@function perc($target, $parent)
+	@return $target / $parent * 100%
+
+@function golden($target)
+	@return #{$target * 1.618}px
+
+@function golden-down($target)
+	@return #{$target / 1.618}px
+
+@function letter-spacing($target)
+	@return #{$target / 1000}em
+
+@function letter-spacing-px($target, $font-size)
+	@return #{($target*$font-size) / 1000}px
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ==== Easings =================================================================================
+
+// EASE IN
+$ease-in-quad: cubic-bezier(0.55, 0.085, 0.68, 0.53)
+$ease-in-cubic: cubic-bezier(0.55, 0.055, 0.675, 0.19)
+$ease-in-quart: cubic-bezier(0.895, 0.03, 0.685, 0.22)
+$ease-in-quint: cubic-bezier(0.755, 0.05, 0.855, 0.06)
+$ease-in-sine: cubic-bezier(0.47, 0, 0.745, 0.715)
+$ease-in-expo: cubic-bezier(0.95, 0.05, 0.795, 0.035)
+$ease-in-circ: cubic-bezier(0.6, 0.04, 0.98, 0.335)
+$ease-in-back: cubic-bezier(0.6, -0.28, 0.735, 0.045)
+
+// EASE OUT
+$ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94)
+$ease-out-cubic: cubic-bezier(0.215, 0.61, 0.355, 1)
+$ease-out-quart: cubic-bezier(0.165, 0.84, 0.44, 1)
+$ease-out-quint: cubic-bezier(0.23, 1, 0.32, 1)
+$ease-out-sine: cubic-bezier(0.39, 0.575, 0.565, 1)
+$ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1)
+$ease-out-circ: cubic-bezier(0.075, 0.82, 0.165, 1)
+$ease-out-back: cubic-bezier(0.175, 0.885, 0.32, 1.275)
+
+// EASE IN OUT
+$ease-in-out-quad: cubic-bezier(0.455, 0.03, 0.515, 0.955)
+$ease-in-out-cubic: cubic-bezier(0.645, 0.045, 0.355, 1)
+$ease-in-out-quart: cubic-bezier(0.77, 0, 0.175, 1)
+$ease-in-out-quint: cubic-bezier(0.86, 0, 0.07, 1)
+$ease-in-out-sine: cubic-bezier(0.445, 0.05, 0.55, 0.95)
+$ease-in-out-expo: cubic-bezier(1, 0, 0, 1)
+$ease-in-out-circ: cubic-bezier(0.785, 0.135, 0.15, 0.86)
+$ease-in-out-back: cubic-bezier(0.68, -0.55, 0.265, 1.55)
