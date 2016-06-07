@@ -27,6 +27,9 @@ FN = {
   },
   context: function(num) {
     return this.prop + num;
+  },
+  contextReturn: function() {
+    return this;
   }
 };
 
@@ -71,8 +74,8 @@ suite("SimplyThread", function() {
     });
   });
   return suite("Thread", function() {
-    var adderPromiseFailThread, adderPromiseThread, adderThread, contextThread, emptyThread, errThread, subtracterThread;
-    emptyThread = errThread = adderThread = adderPromiseThread = adderPromiseFailThread = subtracterThread = contextThread = null;
+    var adderPromiseFailThread, adderPromiseThread, adderThread, contextReturnThread, contextThread, emptyThread, errThread, subtracterThread;
+    emptyThread = errThread = adderThread = adderPromiseThread = adderPromiseFailThread = subtracterThread = contextThread = contextReturnThread = null;
     suiteSetup(function() {
       emptyThread = SimplyThread.create();
       errThread = SimplyThread.create(FN.err);
@@ -80,7 +83,8 @@ suite("SimplyThread", function() {
       adderPromiseThread = SimplyThread.create(FN.adderPromise);
       adderPromiseFailThread = SimplyThread.create(FN.adderPromiseFail);
       subtracterThread = SimplyThread.create(FN.subtracter);
-      return contextThread = SimplyThread.create(FN.context);
+      contextThread = SimplyThread.create(FN.context);
+      return contextReturnThread = SimplyThread.create(FN.contextReturn);
     });
     suite(".run()", function() {
       test("will execute the given function with given arguments and return a thenable object (promise)", function(done) {
@@ -133,7 +137,7 @@ suite("SimplyThread", function() {
           return done();
         });
       });
-      return test("will replace the existing function with the one specified", function(done) {
+      test("will replace the existing function with the one specified", function(done) {
         var notEmptyThread;
         notEmptyThread = SimplyThread.create(FN.adder);
         return notEmptyThread.setFn(FN.subtracter).run(100, 75).then(function(result) {
@@ -142,13 +146,95 @@ suite("SimplyThread", function() {
           return done();
         });
       });
+      return test("will use the second argument, if passed, as the context of the function", function(done) {
+        var myContextReturnThread;
+        myContextReturnThread = SimplyThread.create();
+        return myContextReturnThread.setFn((function() {
+          return this;
+        }), {
+          'prop': 5
+        }).run().then(function(result) {
+          result.should.be.an('object');
+          result.should.have.keys('prop');
+          result.prop.should.equal(5);
+          return done();
+        });
+      });
     });
     suite(".setContext()", function() {
-      return test("will set the function's 'this' keyword to the given argument", function(done) {
+      test("will set the function's 'this' keyword to the given argument", function(done) {
         return contextThread.setContext({
           'prop': 5
         }).run(8).then(function(result) {
           result.should.equal(13);
+          return done();
+        });
+      });
+      test("will use contexts that have function, but will omit them", function(done) {
+        return contextReturnThread.setContext({
+          'name': 'someObject',
+          'fn': function() {
+            return 'blabla';
+          }
+        }).run().then(function(result) {
+          result.should.be.an('object');
+          should.exist(result.name);
+          should.not.exist(result.fn);
+          return done();
+        });
+      });
+      return test("will use contexts that have circular references (1 level max) and will omit DOM objects", function(done) {
+        var obj, sub;
+        obj = {
+          'subA': {
+            'prop1': 'prop1',
+            'prop2': 'prop2',
+            'prop3': 'prop3'
+          },
+          'subB': {
+            'prop1': 'prop1',
+            'prop2': 'prop2',
+            'prop3': 'prop3'
+          },
+          'subC': {
+            'prop1': 'prop1',
+            'prop2': 'prop2',
+            'prop3': 'prop3'
+          }
+        };
+        for (sub in obj) {
+          obj[sub].parent = obj;
+          obj[sub].self = obj[sub];
+          obj[sub].DOM = jQuery('body')[0];
+          obj[sub].DOM$ = jQuery('body');
+        }
+        obj.self = obj;
+        return contextReturnThread.setContext(obj).run().then(function(result) {
+          result.should.be.an('object');
+          should.exist(result.self);
+          result.subA.should.be.an('object');
+          result.subB.should.be.an('object');
+          result.subC.should.be.an('object');
+          should.exist(result.subA.prop1);
+          should.exist(result.subB.prop2);
+          should.exist(result.subC.prop3);
+          should.not.exist(result.subA.self);
+          should.not.exist(result.subB.self);
+          should.not.exist(result.subC.self);
+          should.exist(result.subA.parent);
+          should.exist(result.subB.parent);
+          should.exist(result.subC.parent);
+          should.exist(result.subA.DOM$);
+          should.exist(result.subB.DOM$);
+          should.exist(result.subC.DOM$);
+          should.exist(result.subA.DOM);
+          should.exist(result.subB.DOM);
+          should.exist(result.subC.DOM);
+          result.subA.DOM.should.be.empty;
+          result.subB.DOM.should.be.empty;
+          result.subC.DOM.should.be.empty;
+          result.self.should.deep.equal(result);
+          result.subA.parent.should.deep.equal(result);
           return done();
         });
       });

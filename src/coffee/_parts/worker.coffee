@@ -1,9 +1,12 @@
 ## ==========================================================================
 ## Worker script
 ## ========================================================================== 
+workerScriptRegEx = /^\s*function\s*\(\)\s*\{\s*([\w\W]+)\s*\}\s*$/
+
 workerScript = ()->
 	fnToExecute = ()->
 	fnContext = null
+	circularReference = '**_circular_**'
 	
 	onmessage = (e)->
 		command = e.data.command
@@ -16,7 +19,24 @@ workerScript = ()->
 
 	
 
-	setContext = (context)-> fnContext = context
+	setContext = (context)->
+		if typeof context is 'object'
+			fnContext = context
+		else
+			context = JSON.parse context
+			fnContext = setContext.replaceCircular(context, context)
+
+	setContext.replaceCircular = (object, context)->
+		for key,value of object
+			if value is circularReference
+				object[key] = context
+
+			else if typeof value is 'object' and not Array.isArray(value)
+				object[key] = setContext.replaceCircular(value, object)
+
+		return object
+
+
 
 	setFn = (fnString)-> eval("fnToExecute = #{fnString}")
 

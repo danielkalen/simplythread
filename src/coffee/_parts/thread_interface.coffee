@@ -34,7 +34,32 @@ ThreadInterface::setFn = (fn, context)->
 
 
 ThreadInterface::setContext = (context)->
-	@thread.sendCommand('setContext', context)
+	try
+		contextString = JSON.stringify context
+	catch
+		contextString = do ()->
+			cache = []
+			
+			stringified = JSON.stringify context, (key,value)->
+				if value isnt null and typeof value is 'object'
+					if cache.indexOf(value) isnt -1
+						if value is context
+							return '**_circular_**'
+						else if value?.nodeName and value.nodeType
+							return value
+						else
+							return
+					
+					else
+						cache.push(value)
+
+				return value
+						
+			cache = null
+			return stringified
+		
+
+	@thread.sendCommand('setContext', contextString)
 	return @
 
 

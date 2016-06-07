@@ -18,7 +18,7 @@ Thread::init = ()->
 
 
 Thread::createURI = ()->
-	workerScriptContents = workerScript.toString().match(/^\s*function\s*?\(\)\{(.+)\}\s*$/)[1]
+	workerScriptContents = workerScript.toString().match(workerScriptRegEx)[1]
 
 	if not supports.promises
 		workerScriptContents += promisePolyfill

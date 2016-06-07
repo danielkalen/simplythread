@@ -2,7 +2,7 @@
 var slice = [].slice;
 
 (function() {
-  var SimplyThread, Thread, ThreadInterface, promisePolyfill, supports, workerScript;
+  var SimplyThread, Thread, ThreadInterface, promisePolyfill, supports, workerScript, workerScriptRegEx;
   supports = {
     'workers': !!window.Worker && !!window.Blob && !!window.URL,
     'promises': !!window.Promise
@@ -72,7 +72,34 @@ var slice = [].slice;
     return this;
   };
   ThreadInterface.prototype.setContext = function(context) {
-    this.thread.sendCommand('setContext', context);
+    var contextString, error;
+    try {
+      contextString = JSON.stringify(context);
+    } catch (error) {
+      contextString = (function() {
+        var cache, stringified;
+        cache = [];
+        stringified = JSON.stringify(context, function(key, value) {
+          if (value !== null && typeof value === 'object') {
+            if (cache.indexOf(value) !== -1) {
+              if (value === context) {
+                return '**_circular_**';
+              } else if ((value != null ? value.nodeName : void 0) && value.nodeType) {
+                return value;
+              } else {
+                return;
+              }
+            } else {
+              cache.push(value);
+            }
+          }
+          return value;
+        });
+        cache = null;
+        return stringified;
+      })();
+    }
+    this.thread.sendCommand('setContext', contextString);
     return this;
   };
   ThreadInterface.prototype.kill = function() {
@@ -102,7 +129,7 @@ var slice = [].slice;
   };
   Thread.prototype.createURI = function() {
     var blob, workerScriptContents;
-    workerScriptContents = workerScript.toString().match(/^\s*function\s*?\(\)\{(.+)\}\s*$/)[1];
+    workerScriptContents = workerScript.toString().match(workerScriptRegEx)[1];
     if (!supports.promises) {
       workerScriptContents += promisePolyfill;
     }
@@ -152,10 +179,12 @@ var slice = [].slice;
       };
     })(this));
   };
+  workerScriptRegEx = /^\s*function\s*\(\)\s*\{\s*([\w\W]+)\s*\}\s*$/;
   workerScript = function() {
-    var fnContext, fnToExecute, onmessage, run, setContext, setFn;
+    var circularReference, fnContext, fnToExecute, onmessage, run, setContext, setFn;
     fnToExecute = function() {};
     fnContext = null;
+    circularReference = '**_circular_**';
     onmessage = function(e) {
       var command, payload;
       command = e.data.command;
@@ -170,7 +199,24 @@ var slice = [].slice;
       }
     };
     setContext = function(context) {
-      return fnContext = context;
+      if (typeof context === 'object') {
+        return fnContext = context;
+      } else {
+        context = JSON.parse(context);
+        return fnContext = setContext.replaceCircular(context, context);
+      }
+    };
+    setContext.replaceCircular = function(object, context) {
+      var key, value;
+      for (key in object) {
+        value = object[key];
+        if (value === circularReference) {
+          object[key] = context;
+        } else if (typeof value === 'object' && !Array.isArray(value)) {
+          object[key] = setContext.replaceCircular(value, object);
+        }
+      }
+      return object;
     };
     setFn = function(fnString) {
       return eval("fnToExecute = " + fnString);

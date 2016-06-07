@@ -13,6 +13,7 @@ FN =
 	adderPromise: (a, b)-> new Promise (resolve)-> resolve(a+b)
 	adderPromiseFail: (a, b)-> new Promise (resolve, reject)-> reject(a+b)
 	context: (num)-> @prop+num
+	contextReturn: ()-> @
 
 
 suite "SimplyThread", ()->
@@ -63,7 +64,7 @@ suite "SimplyThread", ()->
 
 
 	suite "Thread", ()->
-		emptyThread = errThread = adderThread = adderPromiseThread = adderPromiseFailThread = subtracterThread = contextThread = null
+		emptyThread = errThread = adderThread = adderPromiseThread = adderPromiseFailThread = subtracterThread = contextThread = contextReturnThread = null
 		suiteSetup ()->
 			emptyThread = SimplyThread.create()
 			errThread = SimplyThread.create FN.err
@@ -72,6 +73,7 @@ suite "SimplyThread", ()->
 			adderPromiseFailThread = SimplyThread.create FN.adderPromiseFail
 			subtracterThread = SimplyThread.create FN.subtracter
 			contextThread = SimplyThread.create FN.context
+			contextReturnThread = SimplyThread.create FN.contextReturn
 		
 		# ==== Run =================================================================================
 		suite ".run()", ()->
@@ -143,6 +145,18 @@ suite "SimplyThread", ()->
 						notEmptyThread.kill()
 						done()
 
+
+			test "will use the second argument, if passed, as the context of the function", (done)->
+				myContextReturnThread = SimplyThread.create()
+
+				myContextReturnThread
+					.setFn (()-> @), {'prop': 5}
+					.run().then (result)->
+						result.should.be.an 'object'
+						result.should.have.keys 'prop'
+						result.prop.should.equal 5
+						done()
+
 	
 
 
@@ -152,11 +166,62 @@ suite "SimplyThread", ()->
 		suite ".setContext()", ()->
 			test "will set the function's 'this' keyword to the given argument", (done)->				
 				contextThread
-					.setContext({'prop': 5})
+					.setContext {'prop': 5}
 					.run(8).then (result)->
 						result.should.equal 13
 						done()
 
+
+			test "will use contexts that have function, but will omit them", (done)->
+				contextReturnThread
+					.setContext {'name':'someObject', 'fn':()-> 'blabla'}
+					.run().then (result)->
+						result.should.be.an 'object'
+						should.exist result.name
+						should.not.exist result.fn
+						done()
+
+
+			test "will use contexts that have circular references (1 level max) and will omit DOM objects", (done)->
+				obj = {'subA':{'prop1','prop2','prop3'}, 'subB':{'prop1','prop2','prop3'}, 'subC':{'prop1','prop2','prop3'} }
+				for sub of obj
+					obj[sub].parent = obj
+					obj[sub].self = obj[sub]
+					obj[sub].DOM = jQuery('body')[0]
+					obj[sub].DOM$ = jQuery('body')
+				obj.self = obj
+				
+
+				contextReturnThread
+					.setContext obj
+					.run().then (result)->
+						result.should.be.an 'object'
+						should.exist result.self
+						result.subA.should.be.an 'object'
+						result.subB.should.be.an 'object'
+						result.subC.should.be.an 'object'
+						should.exist result.subA.prop1
+						should.exist result.subB.prop2
+						should.exist result.subC.prop3
+						should.not.exist result.subA.self
+						should.not.exist result.subB.self
+						should.not.exist result.subC.self
+						should.exist result.subA.parent
+						should.exist result.subB.parent
+						should.exist result.subC.parent
+						should.exist result.subA.DOM$
+						should.exist result.subB.DOM$
+						should.exist result.subC.DOM$
+						should.exist result.subA.DOM
+						should.exist result.subB.DOM
+						should.exist result.subC.DOM
+						result.subA.DOM.should.be.empty
+						result.subB.DOM.should.be.empty
+						result.subC.DOM.should.be.empty
+
+						result.self.should.deep.equal(result)
+						result.subA.parent.should.deep.equal(result)
+						done()
 
 
 
