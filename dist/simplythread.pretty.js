@@ -137,23 +137,30 @@ var slice = [].slice;
     return newArgs;
   };
   stringifyFnsInObjects = function(object, cache) {
-    var key, value;
+    var key, newObj, value;
     if (cache == null) {
       cache = [];
     }
     if (typeof object === 'function') {
       return functionReference + object.toString();
-    }
-    for (key in object) {
-      value = object[key];
-      if (typeof value === 'object' && cache.indexOf(value) === -1) {
-        cache.push(value);
-        object[key] = stringifyFnsInObjects(value, cache);
-      } else if (typeof value === 'function') {
-        object[key] = functionReference + value.toString();
+    } else if (typeof object === 'object') {
+      cache.push(object);
+      newObj = {};
+      for (key in object) {
+        value = object[key];
+        if (typeof value === 'object' && cache.indexOf(value) === -1) {
+          cache.push(value);
+          newObj[key] = stringifyFnsInObjects(value, cache);
+        } else if (typeof value === 'function') {
+          newObj[key] = functionReference + value.toString();
+        } else {
+          newObj[key] = value;
+        }
       }
+      return newObj;
+    } else {
+      return object;
     }
-    return object;
   };
   parseFnsInArgs = function(args) {
     var ___, arg, i, index, len, newArgs;
@@ -366,23 +373,30 @@ var slice = [].slice;
       return newArgs;
     };
     stringifyFnsInObjects = function(object, cache) {
-      var key, value;
+      var key, newObj, value;
       if (cache == null) {
         cache = [];
       }
       if (typeof object === 'function') {
         return functionReference + object.toString();
-      }
-      for (key in object) {
-        value = object[key];
-        if (typeof value === 'object' && cache.indexOf(value) === -1) {
-          cache.push(value);
-          object[key] = stringifyFnsInObjects(value, cache);
-        } else if (typeof value === 'function') {
-          object[key] = functionReference + value.toString();
+      } else if (typeof object === 'object') {
+        cache.push(object);
+        newObj = {};
+        for (key in object) {
+          value = object[key];
+          if (typeof value === 'object' && cache.indexOf(value) === -1) {
+            cache.push(value);
+            newObj[key] = stringifyFnsInObjects(value, cache);
+          } else if (typeof value === 'function') {
+            newObj[key] = functionReference + value.toString();
+          } else {
+            newObj[key] = value;
+          }
         }
+        return newObj;
+      } else {
+        return object;
       }
-      return object;
     };
     parseFnsInArgs = function(args) {
       var ___, arg, i, index, len, newArgs;

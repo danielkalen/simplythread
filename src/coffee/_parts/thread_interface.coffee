@@ -105,19 +105,29 @@ stringifyFnsInArgs = (args)->
 	return newArgs
 
 
-stringifyFnsInObjects = (object, cache=[])->	
+stringifyFnsInObjects = (object, cache=[])->
 	if typeof object is 'function'
 		return functionReference+object.toString()
 	
-	for key,value of object
-		if typeof value is 'object' and cache.indexOf(value) is -1
-			cache.push(value)
-			object[key] = stringifyFnsInObjects(value, cache)
-		
-		else if typeof value is 'function'
-			object[key] = functionReference+value.toString()
+	else if typeof object is 'object'
+		cache.push(object)
+		newObj = {}
 
-	return object
+		for key,value of object
+			if typeof value is 'object' and cache.indexOf(value) is -1
+				cache.push(value)
+				newObj[key] = stringifyFnsInObjects(value, cache)
+			
+			else if typeof value is 'function'
+				newObj[key] = functionReference+value.toString()
+
+			else
+				newObj[key] = value
+
+		return newObj
+
+	else
+		return object
 
 
 
