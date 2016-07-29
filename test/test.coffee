@@ -210,6 +210,20 @@ suite "SimplyThread", ()->
 					.run('someFn', 'simplythread').then (result)->
 						result.should.equal 'SIMPLYTHREAD'
 						done()
+	
+
+
+
+
+		# ==== Set Globals =================================================================================
+		suite ".setScripts()", ()->
+			test "will take an array of strings that act as network paths for external scripts and loads them inside the thread", (done)->				
+				globalsThread
+					.setScripts ['file:///Users/danielkalen/sandbox/simplythread/test/samplescript.js']
+					.run('sampleScriptName').then (result)->
+						result.should.equal 'just a sample script'
+						done()
+			
 
 
 	

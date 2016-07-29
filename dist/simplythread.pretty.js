@@ -81,6 +81,10 @@ var slice = [].slice;
     this.thread.sendCommand('setGlobals', stringifyFnsInObjects(obj));
     return this;
   };
+  ThreadInterface.prototype.setScripts = function(scripts) {
+    this.thread.sendCommand('setScripts', scripts);
+    return this;
+  };
   ThreadInterface.prototype.setContext = function(context) {
     var contextString, error;
     try {
@@ -267,7 +271,7 @@ var slice = [].slice;
   };
   workerScriptRegEx = /^\s*function\s*\(\)\s*\{\s*([\w\W]+)\s*\}\s*$/;
   workerScript = function() {
-    var fnContext, fnToExecute, onmessage, replaceCircular, run, setContext, setFn, setGlobals;
+    var fnContext, fnToExecute, onmessage, replaceCircular, run, setContext, setFn, setGlobals, setScripts;
     fnToExecute = function() {};
     fnContext = null;
     circularReference = '**_circular_**';
@@ -281,6 +285,8 @@ var slice = [].slice;
           return setContext(payload);
         case 'setGlobals':
           return setGlobals(payload);
+        case 'setScripts':
+          return setScripts(payload);
         case 'setFn':
           return setFn(payload);
         case 'run':
@@ -296,6 +302,15 @@ var slice = [].slice;
         results.push(self[key] = value);
       }
       return results;
+    };
+    setScripts = function(scripts) {
+      var err, error;
+      try {
+        return importScripts.apply(self, scripts);
+      } catch (error) {
+        err = error;
+        return console.log(err);
+      }
     };
     setContext = function(context) {
       if (typeof context === 'object') {

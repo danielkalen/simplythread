@@ -16,6 +16,7 @@ workerScript = ()->
 		switch command
 			when 'setContext' then setContext(payload)
 			when 'setGlobals' then setGlobals(payload)
+			when 'setScripts' then setScripts(payload)
 			when 'setFn' then setFn(payload)
 			when 'run' then run(payload)
 
@@ -24,6 +25,12 @@ workerScript = ()->
 		obj = parseFnsInObjects(obj)
 		for key,value of obj
 			self[key] = value
+	
+	setScripts = (scripts)->
+		try
+			importScripts.apply self, scripts 
+		catch err
+			console.log err
 
 
 	setContext = (context)->

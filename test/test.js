@@ -226,6 +226,14 @@ suite("SimplyThread", function() {
         });
       });
     });
+    suite(".setScripts()", function() {
+      return test("will take an array of strings that act as network paths for external scripts and loads them inside the thread", function(done) {
+        return globalsThread.setScripts(['file:///Users/danielkalen/sandbox/simplythread/test/samplescript.js']).run('sampleScriptName').then(function(result) {
+          result.should.equal('just a sample script');
+          return done();
+        });
+      });
+    });
     suite(".setContext()", function() {
       test("will set the function's 'this' keyword to the given argument", function(done) {
         return contextThread.setContext({

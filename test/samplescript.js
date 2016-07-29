@@ -1,0 +1,1 @@
+sampleScriptName = 'just a sample script'

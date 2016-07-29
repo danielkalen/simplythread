@@ -43,6 +43,11 @@ ThreadInterface::setGlobals = (obj)->
 	return @
 
 
+ThreadInterface::setScripts = (scripts)->
+	@thread.sendCommand('setScripts', scripts)
+	return @
+
+
 ThreadInterface::setContext = (context)->
 	try
 		contextString = JSON.stringify context
