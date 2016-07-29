@@ -14,6 +14,7 @@ FN =
 	adderPromiseFail: (a, b)-> new Promise (resolve, reject)-> reject(a+b)
 	context: (num)-> @prop+num
 	contextReturn: ()-> @
+	invoker: (a, b)-> a(b)
 
 
 suite "SimplyThread", ()->
@@ -64,7 +65,7 @@ suite "SimplyThread", ()->
 
 
 	suite "Thread", ()->
-		emptyThread = errThread = adderThread = adderPromiseThread = adderPromiseFailThread = subtracterThread = contextThread = contextReturnThread = null
+		emptyThread = errThread = adderThread = adderPromiseThread = adderPromiseFailThread = subtracterThread = contextThread = contextReturnThread = invokerThread = null
 		suiteSetup ()->
 			emptyThread = SimplyThread.create()
 			errThread = SimplyThread.create FN.err
@@ -74,6 +75,7 @@ suite "SimplyThread", ()->
 			subtracterThread = SimplyThread.create FN.subtracter
 			contextThread = SimplyThread.create FN.context
 			contextReturnThread = SimplyThread.create FN.contextReturn
+			invokerThread = SimplyThread.create FN.invoker
 		
 		# ==== Run =================================================================================
 		suite ".run()", ()->
@@ -116,6 +118,18 @@ suite "SimplyThread", ()->
 				adderPromiseFailThread.run(10, 20).catch (failure)->
 					failure.should.equal 30
 					done()
+
+
+			test "can pass functions as arguments", (done)->
+				sampleFn = (string)-> string.toUpperCase()
+				promise = invokerThread.run(sampleFn, 'simplythread')
+				promise.then.should.be.a('function')
+				promise.catch.should.be.a('function')
+
+				promise.then (result)->
+					result.should.equal 'SIMPLYTHREAD'
+					done()
+				, (err)-> console.log(err)
 
 
 

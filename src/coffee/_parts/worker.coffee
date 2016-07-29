@@ -7,6 +7,7 @@ workerScript = ()->
 	fnToExecute = ()->
 	fnContext = null
 	circularReference = '**_circular_**'
+	functionReference = '**_function_**'
 	
 	onmessage = (e)->
 		command = e.data.command
@@ -26,6 +27,7 @@ workerScript = ()->
 			context = JSON.parse context
 			fnContext = setContext.replaceCircular(context, context)
 
+
 	setContext.replaceCircular = (object, context)->
 		for key,value of object
 			if value is circularReference
@@ -33,6 +35,9 @@ workerScript = ()->
 
 			else if typeof value is 'object' and not Array.isArray(value)
 				object[key] = setContext.replaceCircular(value, object)
+
+			else if typeof value is 'string' and value.indexOf(functionReference) is 0
+				object[key] = eval('___ ='+value.replace functionReference, '')
 
 		return object
 
@@ -42,7 +47,7 @@ workerScript = ()->
 
 	run = (args=[])->
 		try
-			result = fnToExecute.apply(fnContext, args)
+			result = fnToExecute.apply(fnContext, parseFnsInArgs(args))
 		catch err
 			postMessage({status:'reject', payload:"#{err.name}: #{err.message}"})
 			hasError = true
@@ -54,6 +59,21 @@ workerScript = ()->
 
 			else
 				postMessage({'status':'resolve', 'payload':result})
+
+
+
+	parseFnsInArgs = (args)->
+		newArgs = []
+		
+		for arg,index in args
+			if typeof arg is 'string' and arg.indexOf(functionReference) is 0
+				newArgs[index] = eval('___ ='+arg.replace functionReference, '')
+			else
+				newArgs[index] = arg
+
+		return newArgs
+
+
 
 
 	return

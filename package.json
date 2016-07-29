@@ -1,5 +1,5 @@
 {
-  "name": "simplythread",
+  "name": "@danielkalen/simplythread",
   "version": "1.1.0",
   "description": "JS Threads: Run arbitrary functions in immediatly-spawned browser threads with an async workflow",
   "main": "app.coffee",

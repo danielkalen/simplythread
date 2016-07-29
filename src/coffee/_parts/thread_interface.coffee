@@ -17,7 +17,7 @@ ThreadInterface = (@fn)->
 # ==== Prototype =================================================================================
 ThreadInterface::run = (args...)-> new Promise (resolve, reject)=>
 	if typeof @fn is 'function'
-		@thread.sendCommand('run', args).then resolve, reject
+		@thread.sendCommand('run', stringifyFnsInArgs(args)).then resolve, reject
 	else
 		reject new Error('No function was set for this thread.')
 
@@ -47,6 +47,8 @@ ThreadInterface::setContext = (context)->
 							return '**_circular_**'
 						else if value?.nodeName and value.nodeType
 							return value
+						else if typeof value is 'function'
+							return '**_function_**'+value.toString()
 						else
 							return
 					
@@ -70,3 +72,36 @@ ThreadInterface::kill = ()->
 	SimplyThread.remove(@)
 
 	return @
+
+
+
+
+
+
+
+# ==== Helpers =================================================================================
+stringifyFnsInArgs = (args)->
+	newArgs = []
+	
+	for arg,index in args
+		if typeof arg is 'function'
+			newArgs[index] = '**_function_**'+arg.toString()
+		else
+			newArgs[index] = arg
+
+	return newArgs
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

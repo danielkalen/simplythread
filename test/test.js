@@ -30,6 +30,9 @@ FN = {
   },
   contextReturn: function() {
     return this;
+  },
+  invoker: function(a, b) {
+    return a(b);
   }
 };
 
@@ -74,8 +77,8 @@ suite("SimplyThread", function() {
     });
   });
   return suite("Thread", function() {
-    var adderPromiseFailThread, adderPromiseThread, adderThread, contextReturnThread, contextThread, emptyThread, errThread, subtracterThread;
-    emptyThread = errThread = adderThread = adderPromiseThread = adderPromiseFailThread = subtracterThread = contextThread = contextReturnThread = null;
+    var adderPromiseFailThread, adderPromiseThread, adderThread, contextReturnThread, contextThread, emptyThread, errThread, invokerThread, subtracterThread;
+    emptyThread = errThread = adderThread = adderPromiseThread = adderPromiseFailThread = subtracterThread = contextThread = contextReturnThread = invokerThread = null;
     suiteSetup(function() {
       emptyThread = SimplyThread.create();
       errThread = SimplyThread.create(FN.err);
@@ -84,7 +87,8 @@ suite("SimplyThread", function() {
       adderPromiseFailThread = SimplyThread.create(FN.adderPromiseFail);
       subtracterThread = SimplyThread.create(FN.subtracter);
       contextThread = SimplyThread.create(FN.context);
-      return contextReturnThread = SimplyThread.create(FN.contextReturn);
+      contextReturnThread = SimplyThread.create(FN.contextReturn);
+      return invokerThread = SimplyThread.create(FN.invoker);
     });
     suite(".run()", function() {
       test("will execute the given function with given arguments and return a thenable object (promise)", function(done) {
@@ -120,10 +124,25 @@ suite("SimplyThread", function() {
           return done();
         });
       });
-      return test("will return a rejected promise if the given function returned a rejected promise", function(done) {
+      test("will return a rejected promise if the given function returned a rejected promise", function(done) {
         return adderPromiseFailThread.run(10, 20)["catch"](function(failure) {
           failure.should.equal(30);
           return done();
+        });
+      });
+      return test("can pass functions as arguments", function(done) {
+        var promise, sampleFn;
+        sampleFn = function(string) {
+          return string.toUpperCase();
+        };
+        promise = invokerThread.run(sampleFn, 'simplythread');
+        promise.then.should.be.a('function');
+        promise["catch"].should.be.a('function');
+        return promise.then(function(result) {
+          result.should.equal('SIMPLYTHREAD');
+          return done();
+        }, function(err) {
+          return console.log(err);
         });
       });
     });
