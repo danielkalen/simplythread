@@ -14,6 +14,8 @@ FN =
 	adderPromiseFail: (a, b)-> new Promise (resolve, reject)-> reject(a+b)
 	context: (num)-> @prop+num
 	contextReturn: ()-> @
+	globals: (propName)-> @[propName]
+	globalsInvoker: (propName, arg)-> @[propName](arg)
 	invoker: (a, b)-> a(b)
 
 
@@ -65,7 +67,7 @@ suite "SimplyThread", ()->
 
 
 	suite "Thread", ()->
-		emptyThread = errThread = adderThread = adderPromiseThread = adderPromiseFailThread = subtracterThread = contextThread = contextReturnThread = invokerThread = null
+		emptyThread = errThread = adderThread = adderPromiseThread = adderPromiseFailThread = subtracterThread = contextThread = contextReturnThread = globalsThread = globalsInvokerThread = invokerThread = null
 		suiteSetup ()->
 			emptyThread = SimplyThread.create()
 			errThread = SimplyThread.create FN.err
@@ -75,6 +77,8 @@ suite "SimplyThread", ()->
 			subtracterThread = SimplyThread.create FN.subtracter
 			contextThread = SimplyThread.create FN.context
 			contextReturnThread = SimplyThread.create FN.contextReturn
+			globalsThread = SimplyThread.create FN.globals
+			globalsInvokerThread = SimplyThread.create FN.globalsInvoker
 			invokerThread = SimplyThread.create FN.invoker
 		
 		# ==== Run =================================================================================
@@ -132,6 +136,19 @@ suite "SimplyThread", ()->
 				, (err)-> console.log(err)
 
 
+			test "can return functions as results", (done)->
+				curryFn = (string)-> (string)-> string.toUpperCase()
+				promise = invokerThread.run(curryFn, 'simplythread')
+				promise.then.should.be.a('function')
+				promise.catch.should.be.a('function')
+
+				promise.then (result)->
+					result.should.be.a('function')
+					result('simplythread').should.equal 'SIMPLYTHREAD'
+					done()
+				, (err)-> console.log(err)
+
+
 
 
 
@@ -170,6 +187,30 @@ suite "SimplyThread", ()->
 						result.should.have.keys 'prop'
 						result.prop.should.equal 5
 						done()
+
+	
+
+
+
+
+		# ==== Set Globals =================================================================================
+		suite ".setGlobals()", ()->
+			test "receives an object as an argument and sets all of its values to the thread's global scope", (done)->				
+				globalsThread
+					.setGlobals {'prop': 1000}
+					.run('prop').then (result)->
+						result.should.equal 1000
+						done()
+			
+
+
+			test "can set functions to be set as global variables", (done)->				
+				globalsInvokerThread
+					.setGlobals {'someFn': (string)-> string.toUpperCase()}
+					.run('someFn', 'simplythread').then (result)->
+						result.should.equal 'SIMPLYTHREAD'
+						done()
+
 
 	
 

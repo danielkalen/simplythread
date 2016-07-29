@@ -31,6 +31,12 @@ FN = {
   contextReturn: function() {
     return this;
   },
+  globals: function(propName) {
+    return this[propName];
+  },
+  globalsInvoker: function(propName, arg) {
+    return this[propName](arg);
+  },
   invoker: function(a, b) {
     return a(b);
   }
@@ -77,8 +83,8 @@ suite("SimplyThread", function() {
     });
   });
   return suite("Thread", function() {
-    var adderPromiseFailThread, adderPromiseThread, adderThread, contextReturnThread, contextThread, emptyThread, errThread, invokerThread, subtracterThread;
-    emptyThread = errThread = adderThread = adderPromiseThread = adderPromiseFailThread = subtracterThread = contextThread = contextReturnThread = invokerThread = null;
+    var adderPromiseFailThread, adderPromiseThread, adderThread, contextReturnThread, contextThread, emptyThread, errThread, globalsInvokerThread, globalsThread, invokerThread, subtracterThread;
+    emptyThread = errThread = adderThread = adderPromiseThread = adderPromiseFailThread = subtracterThread = contextThread = contextReturnThread = globalsThread = globalsInvokerThread = invokerThread = null;
     suiteSetup(function() {
       emptyThread = SimplyThread.create();
       errThread = SimplyThread.create(FN.err);
@@ -88,6 +94,8 @@ suite("SimplyThread", function() {
       subtracterThread = SimplyThread.create(FN.subtracter);
       contextThread = SimplyThread.create(FN.context);
       contextReturnThread = SimplyThread.create(FN.contextReturn);
+      globalsThread = SimplyThread.create(FN.globals);
+      globalsInvokerThread = SimplyThread.create(FN.globalsInvoker);
       return invokerThread = SimplyThread.create(FN.invoker);
     });
     suite(".run()", function() {
@@ -130,7 +138,7 @@ suite("SimplyThread", function() {
           return done();
         });
       });
-      return test("can pass functions as arguments", function(done) {
+      test("can pass functions as arguments", function(done) {
         var promise, sampleFn;
         sampleFn = function(string) {
           return string.toUpperCase();
@@ -140,6 +148,24 @@ suite("SimplyThread", function() {
         promise["catch"].should.be.a('function');
         return promise.then(function(result) {
           result.should.equal('SIMPLYTHREAD');
+          return done();
+        }, function(err) {
+          return console.log(err);
+        });
+      });
+      return test("can return functions as results", function(done) {
+        var curryFn, promise;
+        curryFn = function(string) {
+          return function(string) {
+            return string.toUpperCase();
+          };
+        };
+        promise = invokerThread.run(curryFn, 'simplythread');
+        promise.then.should.be.a('function');
+        promise["catch"].should.be.a('function');
+        return promise.then(function(result) {
+          result.should.be.a('function');
+          result('simplythread').should.equal('SIMPLYTHREAD');
           return done();
         }, function(err) {
           return console.log(err);
@@ -176,6 +202,26 @@ suite("SimplyThread", function() {
           result.should.be.an('object');
           result.should.have.keys('prop');
           result.prop.should.equal(5);
+          return done();
+        });
+      });
+    });
+    suite(".setGlobals()", function() {
+      test("receives an object as an argument and sets all of its values to the thread's global scope", function(done) {
+        return globalsThread.setGlobals({
+          'prop': 1000
+        }).run('prop').then(function(result) {
+          result.should.equal(1000);
+          return done();
+        });
+      });
+      return test("can set functions to be set as global variables", function(done) {
+        return globalsInvokerThread.setGlobals({
+          'someFn': function(string) {
+            return string.toUpperCase();
+          }
+        }).run('someFn', 'simplythread').then(function(result) {
+          result.should.equal('SIMPLYTHREAD');
           return done();
         });
       });
