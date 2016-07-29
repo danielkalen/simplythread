@@ -33,7 +33,7 @@ ThreadInterface::setFn = (fn, context)->
 		@fnString = fn.toString()
 		
 		@thread.sendCommand('setFn', @fnString)
-		@setContext(context)
+		@setContext(context) if context
 	
 	return @
 

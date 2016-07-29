@@ -71,7 +71,9 @@ var slice = [].slice;
       this.fn = fn;
       this.fnString = fn.toString();
       this.thread.sendCommand('setFn', this.fnString);
-      this.setContext(context);
+      if (context) {
+        this.setContext(context);
+      }
     }
     return this;
   };
