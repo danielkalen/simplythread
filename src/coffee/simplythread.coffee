@@ -1,4 +1,3 @@
-# @dontimport '_parts/jquery.js'
 do ()->
 	supports = 
 		'workers': !!window.Worker and !!window.Blob and !!window.URL

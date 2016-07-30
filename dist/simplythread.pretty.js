@@ -82,7 +82,7 @@ var slice = [].slice;
     return this;
   };
   ThreadInterface.prototype.setScripts = function(scripts) {
-    this.thread.sendCommand('setScripts', scripts);
+    this.thread.sendCommand('setScripts', stringifyFnsInObjects(scripts));
     return this;
   };
   ThreadInterface.prototype.setContext = function(context) {
@@ -149,7 +149,7 @@ var slice = [].slice;
       return functionReference + object.toString();
     } else if (typeof object === 'object') {
       cache.push(object);
-      newObj = {};
+      newObj = Array.isArray(object) ? [] : {};
       for (key in object) {
         value = object[key];
         if (typeof value === 'object' && cache.indexOf(value) === -1) {
@@ -304,13 +304,29 @@ var slice = [].slice;
       return results;
     };
     setScripts = function(scripts) {
-      var err, error;
-      try {
-        return importScripts.apply(self, scripts);
-      } catch (error) {
-        err = error;
-        return console.log(err);
+      var err, error, i, len, results, script;
+      results = [];
+      for (i = 0, len = scripts.length; i < len; i++) {
+        script = scripts[i];
+        switch (script.includes(functionReference)) {
+          case true:
+            self.scriptImport = parseFnsInObjects(script);
+            self.scriptImport();
+            results.push(delete self.scriptImport);
+            break;
+          case false:
+            try {
+              results.push(importScripts(script));
+            } catch (error) {
+              err = error;
+              results.push(console.log(err));
+            }
+            break;
+          default:
+            results.push(void 0);
+        }
       }
+      return results;
     };
     setContext = function(context) {
       if (typeof context === 'object') {

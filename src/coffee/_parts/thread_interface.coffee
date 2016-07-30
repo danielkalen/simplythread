@@ -44,7 +44,7 @@ ThreadInterface::setGlobals = (obj)->
 
 
 ThreadInterface::setScripts = (scripts)->
-	@thread.sendCommand('setScripts', scripts)
+	@thread.sendCommand('setScripts', stringifyFnsInObjects(scripts))
 	return @
 
 
@@ -116,7 +116,7 @@ stringifyFnsInObjects = (object, cache=[])->
 	
 	else if typeof object is 'object'
 		cache.push(object)
-		newObj = {}
+		newObj = if Array.isArray(object) then [] else {}
 
 		for key,value of object
 			if typeof value is 'object' and cache.indexOf(value) is -1

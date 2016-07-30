@@ -227,9 +227,19 @@ suite("SimplyThread", function() {
       });
     });
     suite(".setScripts()", function() {
-      return test("will take an array of strings that act as network paths for external scripts and loads them inside the thread", function(done) {
+      test("will take an array of strings that act as network paths for external scripts and loads them inside the thread", function(done) {
         return globalsThread.setScripts(['file:///Users/danielkalen/sandbox/simplythread/test/samplescript.js']).run('sampleScriptName').then(function(result) {
           result.should.equal('just a sample script');
+          return done();
+        });
+      });
+      return test("can accept function arguments that will be invoked immediatly on the thread's global scope", function(done) {
+        return globalsThread.setScripts([
+          function() {
+            return this.scriptFromFn = 'just a sample script from a function';
+          }
+        ]).run('scriptFromFn').then(function(result) {
+          result.should.equal('just a sample script from a function');
           return done();
         });
       });

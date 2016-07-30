@@ -27,10 +27,19 @@ workerScript = ()->
 			self[key] = value
 	
 	setScripts = (scripts)->
-		try
-			importScripts.apply self, scripts 
-		catch err
-			console.log err
+		for script in scripts 
+			
+			switch script.includes functionReference
+				when true
+					self.scriptImport = parseFnsInObjects(script)
+					self.scriptImport()
+					delete self.scriptImport
+				
+				when false
+					try
+						importScripts(script)
+					catch err
+						console.log err
 
 
 	setContext = (context)->

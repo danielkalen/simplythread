@@ -226,6 +226,15 @@ suite "SimplyThread", ()->
 			
 
 
+			test "can accept function arguments that will be invoked immediatly on the thread's global scope", (done)->				
+				globalsThread
+					.setScripts [()-> @scriptFromFn = 'just a sample script from a function']
+					.run('scriptFromFn').then (result)->
+						result.should.equal 'just a sample script from a function'
+						done()
+			
+
+
 	
 
 
