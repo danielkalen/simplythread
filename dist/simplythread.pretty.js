@@ -412,7 +412,7 @@ var slice = [].slice;
         return functionReference + object.toString();
       } else if (typeof object === 'object') {
         cache.push(object);
-        newObj = {};
+        newObj = Array.isArray(object) ? [] : {};
         for (key in object) {
           value = object[key];
           if (typeof value === 'object' && cache.indexOf(value) === -1) {
