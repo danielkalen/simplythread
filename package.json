@@ -5,23 +5,21 @@
   "main": "app.coffee",
   "dependencies": {},
   "devDependencies": {
-    "assetwatcher": "^1.3.4",
     "chai": "^3.5.0",
     "closure-compiler-service": "^0.6.1",
     "coffee-script": "^1.10.0",
-    "foreach-cli": "^1.0.1",
+    "foreach-cli": "*",
     "mocha": "^2.5.3",
-    "simplyimport": "^1.2.2",
-    "uglify-js": "^2.6.2",
-    "forever": "^0.15.1"
+    "simplyimport": "*",
+    "simplywatch": "*"
   },
   "scripts": {
     "build": "npm run compile && npm run minify",
     "compile": "npm run compile:js && npm run compile:test",
-    "compile:js": "foreach -g 'src/coffee/*.coffee' -x 'simplyimport -i #{path} | coffee -b -s -c > dist/#{name}.pretty.js && uglifyjs dist/#{name}.pretty.js -m -c keep_fargs,unused=false -o dist/#{name}.js'",
+    "compile:js": "foreach -g 'src/*.coffee' -x 'simplyimport -i #{path} | coffee -b -s -c > dist/#{name}.pretty.js && uglifyjs dist/#{name}.pretty.js -m -c keep_fargs,unused=false -o dist/#{name}.js'",
     "compile:test": "coffee -b -c -o test/ test/test.coffee",
     "minify": "closure-service dist/simplythread.pretty.js > dist/simplythread.js",
-    "watch": "assetwatcher -d 'src/coffee/' 'test/' -e 'coffee' -x 'npm run compile'",
+    "watch": "simplywatch -g 'src/*' 'test/test.coffee' -x 'npm run compile'",
     "measure": "npm run measure:pretty -s && npm run measure:minified -s",
     "measure:pretty": "echo 'Standard:' && gzipped dist/simplythread.pretty.js",
     "measure:minified": "echo 'Standard Minfied:' && gzipped dist/simplythread.js",

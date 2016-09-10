@@ -32,9 +32,9 @@ do ()->
 
 
 
-	# @import '_parts/thread_interface.coffee'
-	# @import '_parts/thread.coffee'
-	# @import '_parts/worker.coffee'
-	# @import '_parts/polyfill.coffee'
+	import '_parts/thread_interface.coffee'
+	import '_parts/thread.coffee'
+	import '_parts/worker.coffee'
+	import '_parts/polyfill.coffee'
 
 	window.SimplyThread = SimplyThread
