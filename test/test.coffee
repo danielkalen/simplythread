@@ -1,3 +1,4 @@
+mocha.setup 'tdd'
 expect = chai.expect
 should = chai.should()
 

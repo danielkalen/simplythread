@@ -9,6 +9,17 @@
     "closure-compiler-service": "^0.6.1",
     "coffee-script": "^1.10.0",
     "foreach-cli": "*",
+    "karma": "^1.2.0",
+    "karma-chai": "^0.1.0",
+    "karma-chrome-launcher": "^1.0.1",
+    "karma-coverage": "^1.1.1",
+    "karma-firefox-launcher": "^1.0.0",
+    "karma-ie-launcher": "^1.0.0",
+    "karma-mocha": "^1.1.1",
+    "karma-mocha-reporter": "^2.1.0",
+    "karma-opera-launcher": "^1.0.0",
+    "karma-phantomjs-launcher": "^1.0.1",
+    "karma-safari-launcher": "^1.0.0",
     "mocha": "^2.5.3",
     "simplyimport": "*",
     "simplywatch": "*"
@@ -24,7 +35,7 @@
     "measure:pretty": "echo 'Standard:' && gzipped dist/simplythread.pretty.js",
     "measure:minified": "echo 'Standard Minfied:' && gzipped dist/simplythread.js",
     "test": "open test/testrunner.html",
-    "test:command": "mocha --ui tdd --compilers coffee:coffee-script/register"
+    "karma": "karma start"
   },
   "repository": {
     "type": "git",

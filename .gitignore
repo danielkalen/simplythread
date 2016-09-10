@@ -17,3 +17,5 @@ logs/error.log
 *.log
 
 settings-db.json
+
+test/coverage/*
