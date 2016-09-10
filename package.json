@@ -16,18 +16,17 @@
     "forever": "^0.15.1"
   },
   "scripts": {
-    "test": "open test/testrunner.html",
-    "test:command": "mocha --ui tdd --compilers coffee:coffee-script/register",
-    "build": "npm run compile && npm run super-minify",
+    "build": "npm run compile && npm run minify",
     "compile": "npm run compile:js && npm run compile:test",
     "compile:js": "foreach -g 'src/coffee/*.coffee' -x 'simplyimport -i #{path} | coffee -b -s -c > dist/#{name}.pretty.js && uglifyjs dist/#{name}.pretty.js -m -c keep_fargs,unused=false -o dist/#{name}.js'",
     "compile:test": "coffee -b -c -o test/ test/test.coffee",
-    "super-minify": "closure-service dist/simplythread.pretty.js > dist/simplythread.js",
-    "watch": "npm run watch:js",
-    "watch:js": "assetwatcher -d 'src/coffee/' 'test/' -e 'coffee' -i '**/_plugins/*' -x 'npm run compile'",
+    "minify": "closure-service dist/simplythread.pretty.js > dist/simplythread.js",
+    "watch": "assetwatcher -d 'src/coffee/' 'test/' -e 'coffee' -x 'npm run compile'",
     "measure": "npm run measure:pretty -s && npm run measure:minified -s",
     "measure:pretty": "echo 'Standard:' && gzipped dist/simplythread.pretty.js",
-    "measure:minified": "echo 'Standard Minfied:' && gzipped dist/simplythread.js"
+    "measure:minified": "echo 'Standard Minfied:' && gzipped dist/simplythread.js",
+    "test": "open test/testrunner.html",
+    "test:command": "mocha --ui tdd --compilers coffee:coffee-script/register"
   },
   "repository": {
     "type": "git",
