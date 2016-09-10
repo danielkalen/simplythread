@@ -4,7 +4,7 @@ should = chai.should()
 
 
 
-
+import '../node_modules/@danielkalen/polyfills/polyfills.js'
 
 
 FN =
