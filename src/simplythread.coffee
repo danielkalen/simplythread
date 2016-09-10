@@ -5,6 +5,7 @@ do ()->
 
 	SimplyThread = new ()->
 		threads = []
+		@version = import ../.config/.version.coffee
 
 		@create = (fn)->
 			newThread = new ThreadInterface(fn)

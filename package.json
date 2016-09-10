@@ -13,6 +13,7 @@
     "foreach-cli": "*",
     "fs-extra": "^0.30.0",
     "istanbul": "^0.4.5",
+    "json": "^9.0.4",
     "karma": "^1.2.0",
     "karma-chai": "^0.1.0",
     "karma-chrome-launcher": "^1.0.1",
@@ -33,6 +34,7 @@
     "svg2png": "^3.0.1"
   },
   "scripts": {
+    "postversion": "echo \\'$(json -f package.json version)\\' > .config/.version.coffee && npm run build",
     "build": "npm run compile && npm run minify",
     "compile": "npm run compile:js && npm run compile:test",
     "compile:js": "foreach -g 'src/*.coffee' -x 'simplyimport -i #{path} | coffee -b -s -c > dist/#{name}.pretty.js && uglifyjs dist/#{name}.pretty.js -m -c keep_fargs,unused=false -o dist/#{name}.js'",

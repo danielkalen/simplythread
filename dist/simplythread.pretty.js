@@ -10,6 +10,7 @@ var slice = [].slice;
   SimplyThread = new function() {
     var threads;
     threads = [];
+    this.version = '1.5.3';
     this.create = function(fn) {
       var newThread;
       newThread = new ThreadInterface(fn);
