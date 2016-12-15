@@ -105,46 +105,41 @@ suite("SimplyThread", function() {
       return invokerThread = SimplyThread.create(FN.invoker);
     });
     suite(".run()", function() {
-      test("will execute the given function with given arguments and return a thenable object (promise)", function(done) {
+      test("will execute the given function with given arguments and return a thenable object (promise)", function() {
         var promise;
         promise = adderThread.run(10, 20);
         promise.then.should.be.a('function');
         promise["catch"].should.be.a('function');
         return promise.then(function(result) {
-          result.should.equal(30);
-          return done();
+          return result.should.equal(30);
         });
       });
-      test("will execute the same way with functions that return a promise", function(done) {
+      test("will execute the same way with functions that return a promise", function() {
         var promise;
         promise = adderPromiseThread.run(10, 20);
         promise.then.should.be.a('function');
         promise["catch"].should.be.a('function');
         return promise.then(function(result) {
-          result.should.equal(30);
-          return done();
+          return result.should.equal(30);
         });
       });
-      test("will return an error if no function was given during thread creation or manually set", function(done) {
+      test("will return an error if no function was given during thread creation or manually set", function() {
         return emptyThread.run()["catch"](function(err) {
-          err.should.be.an('error');
-          return done();
+          return err.should.be.an('error');
         });
       });
-      test("if an error occured in the thread, promise should return it in its .catch() method (in a string version)", function(done) {
+      test("if an error occured in the thread, promise should return it in its .catch() method (in a string version)", function() {
         return errThread.run()["catch"](function(err) {
           err.should.be.a('string');
-          err.split(':')[0].should.match(/Error/);
-          return done();
+          return err.split(':')[0].should.match(/Error/);
         });
       });
-      test("will return a rejected promise if the given function returned a rejected promise", function(done) {
+      test("will return a rejected promise if the given function returned a rejected promise", function() {
         return adderPromiseFailThread.run(10, 20)["catch"](function(failure) {
-          failure.should.equal(30);
-          return done();
+          return failure.should.equal(30);
         });
       });
-      test("can pass functions as arguments", function(done) {
+      test("can pass functions as arguments", function() {
         var promise, sampleFn;
         sampleFn = function(string) {
           return string.toUpperCase();
@@ -153,13 +148,10 @@ suite("SimplyThread", function() {
         promise.then.should.be.a('function');
         promise["catch"].should.be.a('function');
         return promise.then(function(result) {
-          result.should.equal('SIMPLYTHREAD');
-          return done();
-        }, function(err) {
-          return console.log(err);
+          return result.should.equal('SIMPLYTHREAD');
         });
       });
-      return test("can return functions as results", function(done) {
+      return test("can return functions as results", function() {
         var curryFn, promise;
         curryFn = function(string) {
           return function(string) {
@@ -171,33 +163,28 @@ suite("SimplyThread", function() {
         promise["catch"].should.be.a('function');
         return promise.then(function(result) {
           result.should.be.a('function');
-          result('simplythread').should.equal('SIMPLYTHREAD');
-          return done();
-        }, function(err) {
-          return console.log(err);
+          return result('simplythread').should.equal('SIMPLYTHREAD');
         });
       });
     });
     suite(".setFn()", function() {
-      test("will execute empty threads normally if a function was later set with .setFn", function(done) {
+      test("will execute empty threads normally if a function was later set with .setFn", function() {
         var myEmptyThread;
         myEmptyThread = SimplyThread.create();
         return myEmptyThread.setFn(FN.adder).run(20, 40).then(function(result) {
           result.should.equal(60);
-          myEmptyThread.kill();
-          return done();
+          return myEmptyThread.kill();
         });
       });
-      test("will replace the existing function with the one specified", function(done) {
+      test("will replace the existing function with the one specified", function() {
         var notEmptyThread;
         notEmptyThread = SimplyThread.create(FN.adder);
         return notEmptyThread.setFn(FN.subtracter).run(100, 75).then(function(result) {
           result.should.equal(25);
-          notEmptyThread.kill();
-          return done();
+          return notEmptyThread.kill();
         });
       });
-      return test("will use the second argument, if passed, as the context of the function", function(done) {
+      return test("will use the second argument, if passed, as the context of the function", function() {
         var myContextReturnThread;
         myContextReturnThread = SimplyThread.create();
         return myContextReturnThread.setFn((function() {
@@ -207,59 +194,53 @@ suite("SimplyThread", function() {
         }).run().then(function(result) {
           result.should.be.an('object');
           result.should.have.keys('prop');
-          result.prop.should.equal(5);
-          return done();
+          return result.prop.should.equal(5);
         });
       });
     });
     suite(".setGlobals()", function() {
-      test("receives an object as an argument and sets all of its values to the thread's global scope", function(done) {
+      test("receives an object as an argument and sets all of its values to the thread's global scope", function() {
         return globalsThread.setGlobals({
           'prop': 1000
         }).run('prop').then(function(result) {
-          result.should.equal(1000);
-          return done();
+          return result.should.equal(1000);
         });
       });
-      return test("can set functions to be set as global variables", function(done) {
+      return test("can set functions to be set as global variables", function() {
         return globalsInvokerThread.setGlobals({
           'someFn': function(string) {
             return string.toUpperCase();
           }
         }).run('someFn', 'simplythread').then(function(result) {
-          result.should.equal('SIMPLYTHREAD');
-          return done();
+          return result.should.equal('SIMPLYTHREAD');
         });
       });
     });
     suite(".setScripts()", function() {
-      test("will take an array of strings that act as network paths for external scripts and loads them inside the thread", function(done) {
+      test("will take an array of strings that act as network paths for external scripts and loads them inside the thread", function() {
         return globalsThread.setScripts(['file:///Users/danielkalen/sandbox/simplythread/test/samplescript.js']).run('sampleScriptName').then(function(result) {
-          result.should.equal('just a sample script');
-          return done();
+          return result.should.equal('just a sample script');
         });
       });
-      return test("can accept function arguments that will be invoked immediatly on the thread's global scope", function(done) {
+      return test("can accept function arguments that will be invoked immediatly on the thread's global scope", function() {
         return globalsThread.setScripts([
           function() {
             return this.scriptFromFn = 'just a sample script from a function';
           }
         ]).run('scriptFromFn').then(function(result) {
-          result.should.equal('just a sample script from a function');
-          return done();
+          return result.should.equal('just a sample script from a function');
         });
       });
     });
     suite(".setContext()", function() {
-      test("will set the function's 'this' keyword to the given argument", function(done) {
+      test("will set the function's 'this' keyword to the given argument", function() {
         return contextThread.setContext({
           'prop': 5
         }).run(8).then(function(result) {
-          result.should.equal(13);
-          return done();
+          return result.should.equal(13);
         });
       });
-      test("will use contexts that have function, but will omit them", function(done) {
+      test("will use contexts that have function, but will omit them", function() {
         return contextReturnThread.setContext({
           'name': 'someObject',
           'fn': function() {
@@ -268,11 +249,10 @@ suite("SimplyThread", function() {
         }).run().then(function(result) {
           result.should.be.an('object');
           should.exist(result.name);
-          should.not.exist(result.fn);
-          return done();
+          return should.not.exist(result.fn);
         });
       });
-      return test("will use contexts that have circular references (1 level max) and will omit DOM objects", function(done) {
+      return test("will use contexts that have circular references (1 level max) and will omit DOM objects", function() {
         var obj, sub;
         obj = {
           'subA': {
@@ -323,8 +303,7 @@ suite("SimplyThread", function() {
           result.subB.DOM.should.be.empty;
           result.subC.DOM.should.be.empty;
           result.self.should.deep.equal(result);
-          result.subA.parent.should.deep.equal(result);
-          return done();
+          return result.subA.parent.should.deep.equal(result);
         });
       });
     });

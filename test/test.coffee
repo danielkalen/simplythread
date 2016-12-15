@@ -86,48 +86,43 @@ suite "SimplyThread", ()->
 		
 		# ==== Run =================================================================================
 		suite ".run()", ()->
-			test "will execute the given function with given arguments and return a thenable object (promise)", (done)->
+			test "will execute the given function with given arguments and return a thenable object (promise)", ()->
 				promise = adderThread.run(10, 20)
 				promise.then.should.be.a('function')
 				promise.catch.should.be.a('function')
 
 				promise.then (result)->
 					result.should.equal 30
-					done()
 
 
-			test "will execute the same way with functions that return a promise", (done)->
+			test "will execute the same way with functions that return a promise", ()->
 				promise = adderPromiseThread.run(10, 20)
 				promise.then.should.be.a('function')
 				promise.catch.should.be.a('function')
 
 				promise.then (result)->
 					result.should.equal 30
-					done()
 
 
 
-			test "will return an error if no function was given during thread creation or manually set", (done)->
+			test "will return an error if no function was given during thread creation or manually set", ()->
 				emptyThread.run().catch (err)->
 					err.should.be.an 'error'
-					done()
 
 
 
-			test "if an error occured in the thread, promise should return it in its .catch() method (in a string version)", (done)->
+			test "if an error occured in the thread, promise should return it in its .catch() method (in a string version)", ()->
 				errThread.run().catch (err)->
 					err.should.be.a 'string'
 					err.split(':')[0].should.match(/Error/)
-					done()
 
 			
-			test "will return a rejected promise if the given function returned a rejected promise", (done)->
+			test "will return a rejected promise if the given function returned a rejected promise", ()->
 				adderPromiseFailThread.run(10, 20).catch (failure)->
 					failure.should.equal 30
-					done()
 
 
-			test "can pass functions as arguments", (done)->
+			test "can pass functions as arguments", ()->
 				sampleFn = (string)-> string.toUpperCase()
 				promise = invokerThread.run(sampleFn, 'simplythread')
 				promise.then.should.be.a('function')
@@ -135,11 +130,9 @@ suite "SimplyThread", ()->
 
 				promise.then (result)->
 					result.should.equal 'SIMPLYTHREAD'
-					done()
-				, (err)-> console.log(err)
 
 
-			test "can return functions as results", (done)->
+			test "can return functions as results", ()->
 				curryFn = (string)-> (string)-> string.toUpperCase()
 				promise = invokerThread.run(curryFn, 'simplythread')
 				promise.then.should.be.a('function')
@@ -148,8 +141,6 @@ suite "SimplyThread", ()->
 				promise.then (result)->
 					result.should.be.a('function')
 					result('simplythread').should.equal 'SIMPLYTHREAD'
-					done()
-				, (err)-> console.log(err)
 
 
 
@@ -158,7 +149,7 @@ suite "SimplyThread", ()->
 
 		# ==== Set Function =================================================================================
 		suite ".setFn()", ()->
-			test "will execute empty threads normally if a function was later set with .setFn", (done)->
+			test "will execute empty threads normally if a function was later set with .setFn", ()->
 				myEmptyThread = SimplyThread.create()
 				
 				myEmptyThread
@@ -166,10 +157,9 @@ suite "SimplyThread", ()->
 					.run(20, 40).then (result)->
 						result.should.equal 60
 						myEmptyThread.kill()
-						done()
 			
 
-			test "will replace the existing function with the one specified", (done)->
+			test "will replace the existing function with the one specified", ()->
 				notEmptyThread = SimplyThread.create FN.adder
 				
 				notEmptyThread
@@ -177,10 +167,9 @@ suite "SimplyThread", ()->
 					.run(100, 75).then (result)->
 						result.should.equal 25
 						notEmptyThread.kill()
-						done()
 
 
-			test "will use the second argument, if passed, as the context of the function", (done)->
+			test "will use the second argument, if passed, as the context of the function", ()->
 				myContextReturnThread = SimplyThread.create()
 
 				myContextReturnThread
@@ -189,7 +178,6 @@ suite "SimplyThread", ()->
 						result.should.be.an 'object'
 						result.should.have.keys 'prop'
 						result.prop.should.equal 5
-						done()
 
 	
 
@@ -198,21 +186,19 @@ suite "SimplyThread", ()->
 
 		# ==== Set Globals =================================================================================
 		suite ".setGlobals()", ()->
-			test "receives an object as an argument and sets all of its values to the thread's global scope", (done)->				
+			test "receives an object as an argument and sets all of its values to the thread's global scope", ()->				
 				globalsThread
 					.setGlobals {'prop': 1000}
 					.run('prop').then (result)->
 						result.should.equal 1000
-						done()
 			
 
 
-			test "can set functions to be set as global variables", (done)->				
+			test "can set functions to be set as global variables", ()->				
 				globalsInvokerThread
 					.setGlobals {'someFn': (string)-> string.toUpperCase()}
 					.run('someFn', 'simplythread').then (result)->
 						result.should.equal 'SIMPLYTHREAD'
-						done()
 	
 
 
@@ -220,21 +206,19 @@ suite "SimplyThread", ()->
 
 		# ==== Set Globals =================================================================================
 		suite ".setScripts()", ()->
-			test "will take an array of strings that act as network paths for external scripts and loads them inside the thread", (done)->				
+			test "will take an array of strings that act as network paths for external scripts and loads them inside the thread", ()->				
 				globalsThread
 					.setScripts ['file:///Users/danielkalen/sandbox/simplythread/test/samplescript.js']
 					.run('sampleScriptName').then (result)->
 						result.should.equal 'just a sample script'
-						done()
 			
 
 
-			test "can accept function arguments that will be invoked immediatly on the thread's global scope", (done)->				
+			test "can accept function arguments that will be invoked immediatly on the thread's global scope", ()->				
 				globalsThread
 					.setScripts [()-> @scriptFromFn = 'just a sample script from a function']
 					.run('scriptFromFn').then (result)->
 						result.should.equal 'just a sample script from a function'
-						done()
 			
 
 
@@ -245,25 +229,23 @@ suite "SimplyThread", ()->
 
 		# ==== Set Context =================================================================================
 		suite ".setContext()", ()->
-			test "will set the function's 'this' keyword to the given argument", (done)->				
+			test "will set the function's 'this' keyword to the given argument", ()->				
 				contextThread
 					.setContext {'prop': 5}
 					.run(8).then (result)->
 						result.should.equal 13
-						done()
 
 
-			test "will use contexts that have function, but will omit them", (done)->
+			test "will use contexts that have function, but will omit them", ()->
 				contextReturnThread
 					.setContext {'name':'someObject', 'fn':()-> 'blabla'}
 					.run().then (result)->
 						result.should.be.an 'object'
 						should.exist result.name
 						should.not.exist result.fn
-						done()
 
 
-			test "will use contexts that have circular references (1 level max) and will omit DOM objects", (done)->
+			test "will use contexts that have circular references (1 level max) and will omit DOM objects", ()->
 				obj = {'subA':{'prop1','prop2','prop3'}, 'subB':{'prop1','prop2','prop3'}, 'subC':{'prop1','prop2','prop3'} }
 				for sub of obj
 					obj[sub].parent = obj
@@ -302,7 +284,6 @@ suite "SimplyThread", ()->
 
 						result.self.should.deep.equal(result)
 						result.subA.parent.should.deep.equal(result)
-						done()
 
 
 
