@@ -29,7 +29,7 @@ workerScript = ()->
 	setScripts = (scripts)->
 		for script in scripts 
 			
-			switch script.includes functionReference
+			switch script.indexOf(functionReference) isnt -1
 				when true
 					self.scriptImport = parseFnsInObjects(script)
 					self.scriptImport()
@@ -40,6 +40,8 @@ workerScript = ()->
 						importScripts(script)
 					catch err
 						console.log err
+
+		return
 
 
 	setContext = (context)->
