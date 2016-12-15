@@ -1,0 +1,1 @@
+window.isKarma = true;

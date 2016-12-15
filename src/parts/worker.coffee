@@ -36,10 +36,10 @@ workerScript = ()->
 					delete self.scriptImport
 				
 				when false
-					try
-						importScripts(script)
-					catch err
-						console.log err
+					importScripts(script)
+					# try
+					# catch err
+					# 	console.log err
 
 		return
 

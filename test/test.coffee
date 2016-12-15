@@ -3,8 +3,10 @@ mocha.slow(400)
 mocha.bail()
 expect = chai.expect
 should = chai.should()
-
-
+basePath = location.origin + location.pathname.replace /\/[^\/]+$/, ''
+basePath = basePath.replace /\/test$/, ''
+basePath += '/base' if window.isKarma or window.isSauce
+Promise.config warnings:false
 
 
 
@@ -206,11 +208,11 @@ suite "SimplyThread", ()->
 
 
 
-		# ==== Set Globals =================================================================================
+		# ==== Set External Scripts =================================================================================
 		suite ".setScripts()", ()->
 			test "will take an array of strings that act as network paths for external scripts and loads them inside the thread", ()->				
 				globalsThread
-					.setScripts ['file:///Users/danielkalen/sandbox/simplythread/test/samplescript.js']
+					.setScripts ["#{basePath}/test/samplescript.js"]
 					.run('sampleScriptName').then (result)->
 						result.should.equal 'just a sample script'
 			

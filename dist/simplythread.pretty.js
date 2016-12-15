@@ -27,10 +27,10 @@ var slice = [].slice;
       return threads.slice();
     };
     this.killAll = function() {
-      threads.forEach(function(thread) {
+      threads.slice().forEach(function(thread) {
         return thread.kill();
       });
-      return this.list();
+      return true;
     };
     return this;
   };
@@ -234,12 +234,20 @@ var slice = [].slice;
         var handleMessage;
         if (_this.worker) {
           handleMessage = function(e) {
+            var err, proxyErr;
             switch (e.data.status) {
               case 'resolve':
                 resolve(e.data.payload);
                 break;
               case 'reject':
-                reject(e.data.payload);
+                err = e.data.payload;
+                if (err && typeof err === 'object' && window[err.name] && window[err.name].constructor === Function) {
+                  proxyErr = err.name && window[err.name] ? new window[err.name](err.message) : new Error(err.message);
+                  proxyErr.stack = err.stack;
+                  reject(proxyErr);
+                } else {
+                  reject(err);
+                }
             }
             return _this.worker.removeEventListener('message', handleMessage);
           };
@@ -271,7 +279,7 @@ var slice = [].slice;
   };
   workerScriptRegEx = /^\s*function\s*\(\)\s*\{\s*([\w\W]+)\s*\}\s*$/;
   workerScript = function() {
-    var fnContext, fnToExecute, onmessage, replaceCircular, run, setContext, setFn, setGlobals, setScripts;
+    var fnContext, fnToExecute, normalizeError, onmessage, replaceCircular, run, setContext, setFn, setGlobals, setScripts;
     fnToExecute = function() {};
     fnContext = null;
     circularReference = '**_circular_**';
@@ -304,29 +312,19 @@ var slice = [].slice;
       return results;
     };
     setScripts = function(scripts) {
-      var err, error, i, len, results, script;
-      results = [];
+      var i, len, script;
       for (i = 0, len = scripts.length; i < len; i++) {
         script = scripts[i];
-        switch (script.includes(functionReference)) {
+        switch (script.indexOf(functionReference) !== -1) {
           case true:
             self.scriptImport = parseFnsInObjects(script);
             self.scriptImport();
-            results.push(delete self.scriptImport);
+            delete self.scriptImport;
             break;
           case false:
-            try {
-              results.push(importScripts(script));
-            } catch (error) {
-              err = error;
-              results.push(console.log(err));
-            }
-            break;
-          default:
-            results.push(void 0);
+            importScripts(script);
         }
       }
-      return results;
     };
     setContext = function(context) {
       if (typeof context === 'object') {
@@ -350,7 +348,7 @@ var slice = [].slice;
         err = error;
         postMessage({
           status: 'reject',
-          payload: err.name + ": " + err.message
+          payload: normalizeError(err)
         });
         hasError = true;
       }
@@ -375,6 +373,15 @@ var slice = [].slice;
           });
         }
       }
+    };
+    normalizeError = function(arg1) {
+      var message, name, stack;
+      name = arg1.name, message = arg1.message, stack = arg1.stack;
+      return {
+        name: name,
+        message: message,
+        stack: stack
+      };
     };
     replaceCircular = function(object, context) {
       var key, value;
@@ -465,6 +472,15 @@ var slice = [].slice;
       return object;
     };
   };
-  promisePolyfill = '(function(){"use strict";var f,g=[];function l(a){g.push(a);1==g.length&&f()}function m(){for(;g.length;)g[0](),g.shift()}f=function(){setTimeout(m)};function n(a){this.a=p;this.b=void 0;this.f=[];var b=this;try{a(function(a){q(b,a)},function(a){r(b,a)})}catch(c){r(b,c)}}var p=2;function t(a){return new n(function(b,c){c(a)})}function u(a){return new n(function(b){b(a)})}function q(a,b){if(a.a==p){if(b==a)throw new TypeError;var c=!1;try{var d=b&&b.then;if(null!=b&&"object"==typeof b&&"function"==typeof d){d.call(b,function(b){c||q(a,b);c=!0},function(b){c||r(a,b);c=!0});return}}catch(e){c||r(a,e);return}a.a=0;a.b=b;v(a)}} function r(a,b){if(a.a==p){if(b==a)throw new TypeError;a.a=1;a.b=b;v(a)}}function v(a){l(function(){if(a.a!=p)for(;a.f.length;){var b=a.f.shift(),c=b[0],d=b[1],e=b[2],b=b[3];try{0==a.a?"function"==typeof c?e(c.call(void 0,a.b)):e(a.b):1==a.a&&("function"==typeof d?e(d.call(void 0,a.b)):b(a.b))}catch(h){b(h)}}})}n.prototype.g=function(a){return this.c(void 0,a)};n.prototype.c=function(a,b){var c=this;return new n(function(d,e){c.f.push([a,b,d,e]);v(c)})}; function w(a){return new n(function(b,c){function d(c){return function(d){h[c]=d;e+=1;e==a.length&&b(h)}}var e=0,h=[];0==a.length&&b(h);for(var k=0;k<a.length;k+=1)u(a[k]).c(d(k),c)})}function x(a){return new n(function(b,c){for(var d=0;d<a.length;d+=1)u(a[d]).c(b,c)})};window.Promise||(window.Promise=n,window.Promise.resolve=u,window.Promise.reject=t,window.Promise.race=x,window.Promise.all=w,window.Promise.prototype.then=n.prototype.c,window.Promise.prototype["catch"]=n.prototype.g);}());';
-  return window.SimplyThread = SimplyThread;
+  promisePolyfill = '(function(){"use strict";var f,g=[];function l(a){g.push(a);1==g.length&&f()}function m(){for(;g.length;)g[0](),g.shift()}f=function(){setTimeout(m)};function n(a){this.a=p;this.b=void 0;this.f=[];var b=this;try{a(function(a){q(b,a)},function(a){r(b,a)})}catch(c){r(b,c)}}var p=2;function t(a){return new n(function(b,c){c(a)})}function u(a){return new n(function(b){b(a)})}function q(a,b){if(a.a==p){if(b==a)throw new TypeError;var c=!1;try{var d=b&&b.then;if(null!=b&&"object"==typeof b&&"function"==typeof d){d.call(b,function(b){c||q(a,b);c=!0},function(b){c||r(a,b);c=!0});return}}catch(e){c||r(a,e);return}a.a=0;a.b=b;v(a)}} function r(a,b){if(a.a==p){if(b==a)throw new TypeError;a.a=1;a.b=b;v(a)}}function v(a){l(function(){if(a.a!=p)for(;a.f.length;){var b=a.f.shift(),c=b[0],d=b[1],e=b[2],b=b[3];try{0==a.a?"function"==typeof c?e(c.call(void 0,a.b)):e(a.b):1==a.a&&("function"==typeof d?e(d.call(void 0,a.b)):b(a.b))}catch(h){b(h)}}})}n.prototype.g=function(a){return this.c(void 0,a)};n.prototype.c=function(a,b){var c=this;return new n(function(d,e){c.f.push([a,b,d,e]);v(c)})}; function w(a){return new n(function(b,c){function d(c){return function(d){h[c]=d;e+=1;e==a.length&&b(h)}}var e=0,h=[];0==a.length&&b(h);for(var k=0;k<a.length;k+=1)u(a[k]).c(d(k),c)})}function x(a){return new n(function(b,c){for(var d=0;d<a.length;d+=1)u(a[d]).c(b,c)})};self.Promise||(self.Promise=n,self.Promise.resolve=u,self.Promise.reject=t,self.Promise.race=x,self.Promise.all=w,self.Promise.prototype.then=n.prototype.c,self.Promise.prototype["catch"]=n.prototype.g);}());';
+  SimplyThread.version = '1.5.3';
+  if ((typeof exports !== "undefined" && exports !== null ? exports.module : void 0) != null) {
+    return module.exports = SimplyThread;
+  } else if (typeof define === 'function' && define.amd) {
+    return define(['simplythread'], function() {
+      return SimplyThread;
+    });
+  } else {
+    return window.SimplyThread = SimplyThread;
+  }
 })();
