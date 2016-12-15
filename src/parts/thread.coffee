@@ -34,7 +34,14 @@ Thread::sendCommand = (command, payload)-> new Promise (resolve, reject)=>
 		handleMessage = (e)=>
 			switch e.data.status
 				when 'resolve' then resolve(e.data.payload)
-				when 'reject' then reject(e.data.payload)
+				when 'reject'
+					err = e.data.payload
+					if err and typeof err is 'object' and window[err.name] and window[err.name].constructor is Function
+						proxyErr = if err.name and window[err.name] then new window[err.name](err.message) else new Error(err.message)
+						proxyErr.stack = err.stack
+						reject(proxyErr)
+					else
+						reject(err)
 			
 			@worker.removeEventListener 'message', handleMessage
 		

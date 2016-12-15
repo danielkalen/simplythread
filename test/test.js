@@ -128,10 +128,9 @@ suite("SimplyThread", function() {
           return err.should.be.an('error');
         });
       });
-      test("if an error occured in the thread, promise should return it in its .catch() method (in a string version)", function() {
+      test("if an error occured in the thread the run promise should be rejected", function() {
         return errThread.run()["catch"](function(err) {
-          err.should.be.a('string');
-          return err.split(':')[0].should.match(/Error/);
+          return err.should.be.an('error');
         });
       });
       test("will return a rejected promise if the given function returned a rejected promise", function() {

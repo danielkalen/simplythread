@@ -111,10 +111,9 @@ suite "SimplyThread", ()->
 
 
 
-			test "if an error occured in the thread, promise should return it in its .catch() method (in a string version)", ()->
+			test "if an error occured in the thread the run promise should be rejected", ()->
 				errThread.run().catch (err)->
-					err.should.be.a 'string'
-					err.split(':')[0].should.match(/Error/)
+					err.should.be.an 'error'
 
 			
 			test "will return a rejected promise if the given function returned a rejected promise", ()->

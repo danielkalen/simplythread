@@ -57,7 +57,7 @@ workerScript = ()->
 		try
 			result = fnToExecute.apply(fnContext, parseFnsInArgs(args))
 		catch err
-			postMessage({status:'reject', payload:"#{err.name}: #{err.message}"})
+			postMessage(status:'reject', payload:normalizeError(err))
 			hasError = true
 
 		unless hasError
@@ -76,6 +76,10 @@ workerScript = ()->
 
 
 	# ==== Helpers =================================================================================
+	normalizeError = ({name, message, stack})->
+		{name, message, stack}
+
+
 	replaceCircular = (object, context)->
 		for key,value of object
 			if value is circularReference
