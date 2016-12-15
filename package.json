@@ -5,7 +5,6 @@
   "main": "app.coffee",
   "dependencies": {},
   "devDependencies": {
-    "assetwatcher": "^1.3.4",
     "chai": "^3.5.0",
     "closure-compiler-service": "^0.6.1",
     "coffee-script": "^1.10.0",
@@ -24,8 +23,9 @@
     "compile:js": "foreach -g 'src/coffee/*.coffee' -x 'simplyimport -i {{path}} | coffee -b -s -c > dist/{{name}}.pretty.js && uglifyjs dist/{{name}}.pretty.js -m -c keep_fargs,unused=false -o dist/{{name}}.js'",
     "compile:test": "coffee -b -c -o test/ test/test.coffee",
     "super-minify": "closure-service dist/simplythread.pretty.js > dist/simplythread.js",
-    "watch": "npm run watch:js",
-    "watch:js": "assetwatcher -d 'src/coffee/' 'test/' -e 'coffee' -i '**/_plugins/*' -x 'npm run compile'",
+    "watch": "npm run watch:js && npm run watch:test",
+    "watch:js": "simplywatch -g 'src/coffee/*.coffee' -x 'npm run compile:js'",
+    "watch:test": "simplywatch -g 'test/test.coffee' -x 'npm run compile:test'",
     "measure": "npm run measure:pretty -s && npm run measure:minified -s",
     "measure:pretty": "echo 'Standard:' && gzipped dist/simplythread.pretty.js",
     "measure:minified": "echo 'Standard Minfied:' && gzipped dist/simplythread.js"
