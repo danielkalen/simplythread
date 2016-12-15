@@ -36,6 +36,7 @@ do ()->
 	import parts/thread
 	import parts/worker
 	import parts/promise-polyfill
+	SimplyThread.version = import ../.config/.version
 
 	if exports?.module?
 		module.exports = SimplyThread
