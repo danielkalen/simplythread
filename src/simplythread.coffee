@@ -37,4 +37,9 @@ do ()->
 	import parts/worker
 	import parts/promise-polyfill
 
-	window.SimplyThread = SimplyThread
+	if exports?.module?
+		module.exports = SimplyThread
+	else if typeof define is 'function' and define.amd
+		define ['simplythread'], ()-> SimplyThread
+	else
+		window.SimplyThread = SimplyThread
