@@ -12,7 +12,7 @@
   <script src="bower_components/mocha/mocha.js"></script>
   <script src="bower_components/chai/chai.js"></script>
   <script src="bower_components/jquery/dist/jquery.min.js"></script>
-  <script>mocha.setup('tdd')</script>
+  <script>mocha.setup('tdd'); mocha.slow(400)</script>
   <script src="test.js"></script>
   <script>mocha.run()</script>
 </body>
