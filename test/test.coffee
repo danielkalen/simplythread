@@ -9,8 +9,6 @@ basePath += '/base' if window.isKarma or window.isSauce
 Promise.config warnings:false
 
 
-
-
 FN =
 	err: ()-> throw new Error('sample error')
 	subtracter: (a, b)-> a-b
