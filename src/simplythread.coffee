@@ -32,9 +32,9 @@ do ()->
 
 
 
-	import _parts/thread_interface
-	import _parts/thread
-	import _parts/worker
-	import _parts/polyfill
+	import parts/threadInterface
+	import parts/thread
+	import parts/worker
+	import parts/promise-polyfill
 
 	window.SimplyThread = SimplyThread
