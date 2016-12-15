@@ -23,8 +23,8 @@ do ()->
 		@list = ()-> threads.slice()
 
 		@killAll = ()->
-			threads.forEach (thread)-> thread.kill()
-			return @list()
+			threads.slice().forEach (thread)-> thread.kill()
+			return true
 
 		return @
 

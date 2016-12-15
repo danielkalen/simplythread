@@ -80,9 +80,12 @@ suite("SimplyThread", function() {
   suite(".killAll()", function() {
     return test("will kill all running threads", function() {
       var sampleThreads;
+      SimplyThread.list().length.should.equal(0);
       sampleThreads = [SimplyThread.create(), SimplyThread.create(), SimplyThread.create()];
-      SimplyThread.killAll().should.be.an('array');
-      SimplyThread.killAll().should.not.have.members(sampleThreads);
+      SimplyThread.list().length.should.equal(3);
+      SimplyThread.killAll().should.be["true"];
+      SimplyThread.list().length.should.equal(0);
+      SimplyThread.list().should.not.have.members(sampleThreads);
       return sampleThreads.forEach(function(thread) {
         return thread.kill();
       });

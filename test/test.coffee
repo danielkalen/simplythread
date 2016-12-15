@@ -58,10 +58,13 @@ suite "SimplyThread", ()->
 
 	suite ".killAll()", ()->
 		test "will kill all running threads", ()->
+			SimplyThread.list().length.should.equal 0
 			sampleThreads = [SimplyThread.create(), SimplyThread.create(), SimplyThread.create()]
 
-			SimplyThread.killAll().should.be.an 'array'
-			SimplyThread.killAll().should.not.have.members sampleThreads
+			SimplyThread.list().length.should.equal 3
+			SimplyThread.killAll().should.be.true
+			SimplyThread.list().length.should.equal 0
+			SimplyThread.list().should.not.have.members sampleThreads
 			sampleThreads.forEach (thread)-> thread.kill()
 
 
