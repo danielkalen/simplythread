@@ -1,6 +1,6 @@
 {
   "name": "@danielkalen/simplythread",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "JS Threads: Run arbitrary functions in immediatly-spawned browser threads with an async workflow",
   "main": "app.coffee",
   "dependencies": {},
