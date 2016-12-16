@@ -3,6 +3,7 @@
 ## ========================================================================== 
 Thread = (@fn, @fnString)->
 	@worker = @init()
+	@socket = @openSocket()
 	@sendCommand('setFn', @fnString) if @fn
 
 	return @
@@ -28,25 +29,28 @@ Thread::createURI = ()->
 	return URL.createObjectURL(blob)
 
 
+Thread::openSocket = ()-> if @worker
+	socketCallbacks = []
+	
+	@worker.addEventListener 'message', (e)=>
+		if e.data.ID and socketCallbacks[e.data.ID]
+			socketCallbacks[e.data.ID](e.data)
+
+	return {
+		on: (ID, callback)-> socketCallbacks[ID] = callback
+		callbacks: socketCallbacks
+	}
+
+
 
 Thread::sendCommand = (command, payload)-> new Promise (resolve, reject)=>
 	if @worker
-		handleMessage = (e)=>
-			switch e.data.status
-				when 'resolve' then resolve(e.data.payload)
-				when 'reject'
-					err = e.data.payload
-					if err and typeof err is 'object' and window[err.name] and window[err.name].constructor is Function
-						proxyErr = if err.name and window[err.name] then new window[err.name](err.message) else new Error(err.message)
-						proxyErr.stack = err.stack
-						reject(proxyErr)
-					else
-						reject(err)
-			
-			@worker.removeEventListener 'message', handleMessage
-		
-		@worker.addEventListener('message', handleMessage) if command is 'run'
-		@worker.postMessage {command, payload}
+		if command is 'run'
+			@socket.on ID=genTransactionID(), (data)-> switch data.status
+				when 'resolve' then resolve(data.payload)
+				when 'reject' then reject(normalizeRejection data.payload)
+					
+		@worker.postMessage {command, payload, ID}
 
 
 	else # Fallback
@@ -59,3 +63,25 @@ Thread::sendCommand = (command, payload)-> new Promise (resolve, reject)=>
 
 			when 'setContext'
 				@context = payload
+
+
+
+currentID = 0
+genTransactionID = ()-> ''+(++currentID)
+
+
+normalizeRejection = (err)->
+	if err and typeof err is 'object' and window[err.name] and window[err.name].constructor is Function
+		proxyErr = if err.name and window[err.name] then new window[err.name](err.message) else new Error(err.message)
+		proxyErr.stack = err.stack
+		return proxyErr
+	else
+		return err
+
+
+
+
+
+
+
+

@@ -43,6 +43,13 @@ FN = {
       return reject(a + b);
     });
   },
+  delayedPromise: function(a, b) {
+    return new Promise(function(resolve) {
+      return setTimeout((function() {
+        return resolve(a + b);
+      }), 150 * Math.random());
+    });
+  },
   context: function(num) {
     return this.prop + num;
   },
@@ -96,22 +103,20 @@ suite("SimplyThread", function() {
       sampleThreads = [SimplyThread.create(), SimplyThread.create(), SimplyThread.create()];
       SimplyThread.list().length.should.equal(3);
       SimplyThread.killAll().should.be["true"];
-      SimplyThread.list().length.should.equal(0);
       SimplyThread.list().should.not.have.members(sampleThreads);
-      return sampleThreads.forEach(function(thread) {
-        return thread.kill();
-      });
+      return SimplyThread.list().length.should.equal(0);
     });
   });
   return suite("Thread", function() {
-    var adderPromiseFailThread, adderPromiseThread, adderThread, contextReturnThread, contextThread, emptyThread, errThread, globalsInvokerThread, globalsThread, invokerThread, subtracterThread;
-    emptyThread = errThread = adderThread = adderPromiseThread = adderPromiseFailThread = subtracterThread = contextThread = contextReturnThread = globalsThread = globalsInvokerThread = invokerThread = null;
+    var adderPromiseFailThread, adderPromiseThread, adderThread, contextReturnThread, contextThread, delayedPromiseThread, emptyThread, errThread, globalsInvokerThread, globalsThread, invokerThread, subtracterThread;
+    emptyThread = errThread = adderThread = adderPromiseThread = adderPromiseFailThread = delayedPromiseThread = subtracterThread = contextThread = contextReturnThread = globalsThread = globalsInvokerThread = invokerThread = null;
     suiteSetup(function() {
       emptyThread = SimplyThread.create();
       errThread = SimplyThread.create(FN.err);
       adderThread = SimplyThread.create(FN.adder);
       adderPromiseThread = SimplyThread.create(FN.adderPromise);
       adderPromiseFailThread = SimplyThread.create(FN.adderPromiseFail);
+      delayedPromiseThread = SimplyThread.create(FN.delayedPromise);
       subtracterThread = SimplyThread.create(FN.subtracter);
       contextThread = SimplyThread.create(FN.context);
       contextReturnThread = SimplyThread.create(FN.contextReturn);
@@ -136,6 +141,13 @@ suite("SimplyThread", function() {
         promise["catch"].should.be.a('function');
         return promise.then(function(result) {
           return result.should.equal(30);
+        });
+      });
+      test("will avoid conflicts with other runs of the same thread", function() {
+        return Promise.all([delayedPromiseThread.run(5, 10), delayedPromiseThread.run(25, 75), delayedPromiseThread.run(100, 12)]).then(function(results) {
+          results[0].should.equal(15);
+          results[1].should.equal(100);
+          return results[2].should.equal(112);
         });
       });
       test("will return an error if no function was given during thread creation or manually set", function() {

@@ -15,6 +15,7 @@ FN =
 	adder: (a, b)-> a+b
 	adderPromise: (a, b)-> new Promise (resolve)-> resolve(a+b)
 	adderPromiseFail: (a, b)-> new Promise (resolve, reject)-> reject(a+b)
+	delayedPromise: (a, b)-> new Promise (resolve)-> setTimeout (()->resolve(a+b)), 150*Math.random()
 	context: (num)-> @prop+num
 	contextReturn: ()-> @
 	globals: (propName)-> @[propName]
@@ -63,9 +64,8 @@ suite "SimplyThread", ()->
 
 			SimplyThread.list().length.should.equal 3
 			SimplyThread.killAll().should.be.true
-			SimplyThread.list().length.should.equal 0
 			SimplyThread.list().should.not.have.members sampleThreads
-			sampleThreads.forEach (thread)-> thread.kill()
+			SimplyThread.list().length.should.equal 0
 
 
 
@@ -73,13 +73,14 @@ suite "SimplyThread", ()->
 
 
 	suite "Thread", ()->
-		emptyThread = errThread = adderThread = adderPromiseThread = adderPromiseFailThread = subtracterThread = contextThread = contextReturnThread = globalsThread = globalsInvokerThread = invokerThread = null
+		emptyThread = errThread = adderThread = adderPromiseThread = adderPromiseFailThread = delayedPromiseThread = subtracterThread = contextThread = contextReturnThread = globalsThread = globalsInvokerThread = invokerThread = null
 		suiteSetup ()->
 			emptyThread = SimplyThread.create()
 			errThread = SimplyThread.create FN.err
 			adderThread = SimplyThread.create FN.adder
 			adderPromiseThread = SimplyThread.create FN.adderPromise
 			adderPromiseFailThread = SimplyThread.create FN.adderPromiseFail
+			delayedPromiseThread = SimplyThread.create FN.delayedPromise
 			subtracterThread = SimplyThread.create FN.subtracter
 			contextThread = SimplyThread.create FN.context
 			contextReturnThread = SimplyThread.create FN.contextReturn
@@ -106,6 +107,14 @@ suite "SimplyThread", ()->
 				promise.then (result)->
 					result.should.equal 30
 
+
+			test "will avoid conflicts with other runs of the same thread", ()->
+				Promise
+					.all([delayedPromiseThread.run(5,10), delayedPromiseThread.run(25,75), delayedPromiseThread.run(100,12)])
+					.then (results)->
+						results[0].should.equal 15
+						results[1].should.equal 100
+						results[2].should.equal 112
 
 
 			test "will return an error if no function was given during thread creation or manually set", ()->

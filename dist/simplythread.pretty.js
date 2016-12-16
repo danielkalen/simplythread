@@ -2,7 +2,7 @@
 var slice = [].slice;
 
 (function() {
-  var SimplyThread, Thread, ThreadInterface, circularReference, functionReference, parseFnsInArgs, parseFnsInObjects, promisePolyfill, stringifyFnsInArgs, stringifyFnsInObjects, supports, workerScript, workerScriptRegEx;
+  var SimplyThread, Thread, ThreadInterface, circularReference, currentID, functionReference, genTransactionID, normalizeRejection, parseFnsInArgs, parseFnsInObjects, promisePolyfill, stringifyFnsInArgs, stringifyFnsInObjects, supports, workerScript, workerScriptRegEx;
   supports = {
     'workers': !!window.Worker && !!window.Blob && !!window.URL,
     'promises': !!window.Promise
@@ -205,6 +205,7 @@ var slice = [].slice;
     this.fn = fn1;
     this.fnString = fnString1;
     this.worker = this.init();
+    this.socket = this.openSocket();
     if (this.fn) {
       this.sendCommand('setFn', this.fnString);
     }
@@ -228,35 +229,44 @@ var slice = [].slice;
     });
     return URL.createObjectURL(blob);
   };
+  Thread.prototype.openSocket = function() {
+    var socketCallbacks;
+    if (this.worker) {
+      socketCallbacks = [];
+      this.worker.addEventListener('message', (function(_this) {
+        return function(e) {
+          if (e.data.ID && socketCallbacks[e.data.ID]) {
+            return socketCallbacks[e.data.ID](e.data);
+          }
+        };
+      })(this));
+      return {
+        on: function(ID, callback) {
+          return socketCallbacks[ID] = callback;
+        },
+        callbacks: socketCallbacks
+      };
+    }
+  };
   Thread.prototype.sendCommand = function(command, payload) {
     return new Promise((function(_this) {
       return function(resolve, reject) {
-        var handleMessage;
+        var ID;
         if (_this.worker) {
-          handleMessage = function(e) {
-            var err, proxyErr;
-            switch (e.data.status) {
-              case 'resolve':
-                resolve(e.data.payload);
-                break;
-              case 'reject':
-                err = e.data.payload;
-                if (err && typeof err === 'object' && window[err.name] && window[err.name].constructor === Function) {
-                  proxyErr = err.name && window[err.name] ? new window[err.name](err.message) : new Error(err.message);
-                  proxyErr.stack = err.stack;
-                  reject(proxyErr);
-                } else {
-                  reject(err);
-                }
-            }
-            return _this.worker.removeEventListener('message', handleMessage);
-          };
           if (command === 'run') {
-            _this.worker.addEventListener('message', handleMessage);
+            _this.socket.on(ID = genTransactionID(), function(data) {
+              switch (data.status) {
+                case 'resolve':
+                  return resolve(data.payload);
+                case 'reject':
+                  return reject(normalizeRejection(data.payload));
+              }
+            });
           }
           return _this.worker.postMessage({
             command: command,
-            payload: payload
+            payload: payload,
+            ID: ID
           });
         } else {
           switch (command) {
@@ -277,6 +287,20 @@ var slice = [].slice;
       };
     })(this));
   };
+  currentID = 0;
+  genTransactionID = function() {
+    return '' + (++currentID);
+  };
+  normalizeRejection = function(err) {
+    var proxyErr;
+    if (err && typeof err === 'object' && window[err.name] && window[err.name].constructor === Function) {
+      proxyErr = err.name && window[err.name] ? new window[err.name](err.message) : new Error(err.message);
+      proxyErr.stack = err.stack;
+      return proxyErr;
+    } else {
+      return err;
+    }
+  };
   workerScriptRegEx = /^\s*function\s*\(\)\s*\{\s*([\w\W]+)\s*\}\s*$/;
   workerScript = function() {
     var fnContext, fnToExecute, normalizeError, onmessage, replaceCircular, run, setContext, setFn, setGlobals, setScripts;
@@ -285,9 +309,10 @@ var slice = [].slice;
     circularReference = '**_circular_**';
     functionReference = '**_function_**';
     onmessage = function(e) {
-      var command, payload;
+      var ID, command, payload;
       command = e.data.command;
       payload = e.data.payload;
+      ID = e.data.ID;
       switch (command) {
         case 'setContext':
           return setContext(payload);
@@ -298,7 +323,7 @@ var slice = [].slice;
         case 'setFn':
           return setFn(payload);
         case 'run':
-          return run(payload);
+          return run(payload, ID);
       }
     };
     setGlobals = function(obj) {
@@ -337,7 +362,7 @@ var slice = [].slice;
     setFn = function(fnString) {
       return eval("fnToExecute = " + fnString);
     };
-    run = function(args) {
+    run = function(args, ID) {
       var err, error, hasError, result;
       if (args == null) {
         args = [];
@@ -347,31 +372,26 @@ var slice = [].slice;
       } catch (error) {
         err = error;
         postMessage({
+          ID: ID,
           status: 'reject',
           payload: normalizeError(err)
         });
         hasError = true;
       }
       if (!hasError) {
-        if (result && result.then) {
-          result.then(function(result) {
-            return postMessage({
-              'status': 'resolve',
-              'payload': stringifyFnsInObjects(result)
-            });
-          });
-          return result["catch"](function(result) {
-            return postMessage({
-              'status': 'reject',
-              'payload': stringifyFnsInObjects(result)
-            });
-          });
-        } else {
+        return Promise.resolve(result).then(function(result) {
           return postMessage({
-            'status': 'resolve',
+            ID: ID,
+            status: 'resolve',
             'payload': stringifyFnsInObjects(result)
           });
-        }
+        })["catch"](function(result) {
+          return postMessage({
+            ID: ID,
+            status: 'reject',
+            'payload': stringifyFnsInObjects(result)
+          });
+        });
       }
     };
     normalizeError = function(arg1) {

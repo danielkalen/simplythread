@@ -12,13 +12,14 @@ workerScript = ()->
 	onmessage = (e)->
 		command = e.data.command
 		payload = e.data.payload
+		ID = e.data.ID
 		
 		switch command
 			when 'setContext' then setContext(payload)
 			when 'setGlobals' then setGlobals(payload)
 			when 'setScripts' then setScripts(payload)
 			when 'setFn' then setFn(payload)
-			when 'run' then run(payload)
+			when 'run' then run(payload, ID)
 
 	
 	setGlobals = (obj)->
@@ -55,21 +56,17 @@ workerScript = ()->
 
 	setFn = (fnString)-> eval("fnToExecute = #{fnString}")
 
-	run = (args=[])->
+	run = (args=[], ID)->
 		try
 			result = fnToExecute.apply(fnContext, parseFnsInArgs(args))
 		catch err
-			postMessage(status:'reject', payload:normalizeError(err))
+			postMessage {ID, status:'reject', payload:normalizeError(err)}
 			hasError = true
 
 		unless hasError
-			if result and result.then
-				result.then (result)-> postMessage({'status':'resolve', 'payload':stringifyFnsInObjects(result)})
-				result.catch (result)-> postMessage({'status':'reject', 'payload':stringifyFnsInObjects(result)})
-
-			else
-				postMessage({'status':'resolve', 'payload':stringifyFnsInObjects(result)})
-				# postMessage({'status':'resolve', 'payload':result})
+			Promise.resolve(result)
+				.then (result)-> postMessage {ID, status:'resolve', 'payload':stringifyFnsInObjects(result)}
+				.catch (result)-> postMessage {ID, status:'reject', 'payload':stringifyFnsInObjects(result)}
 
 
 
