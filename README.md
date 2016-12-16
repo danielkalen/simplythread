@@ -59,12 +59,84 @@ Convinence method that kills all active threads.
 ### `thread.run([arg1[, arg2[, ...]]])`
 Execute the function provided to the thread (either through `SimplyThread.create(fn)` or `thread.setFn(fn)`) with the provided arguments. Returns a promise which will either resolve with the result or reject upon error. If a function wasn't provided during thread creation or wasn't later set via thread.setFn the returned promise will be immediatly rejected.
 
+
+### `thread.on(eventName, callback)`
+Registers the provided callback to be invoked when `threadEmit(eventName)` is called from inside the thread's main function.
+
+Example:
+```javascript
+var thread = SimplyThread.create(function(number){
+    setTimeout(function(){
+        threadEmit('myEvent', number*10);
+
+        setTimeout(function(){
+            threadEmit('myEvent', number*100);
+        }, 50);
+    }, 100);
+});
+thread.on('myEvent', (payload)=> console.log(payload)) // Logs '50' after 100ms, '500' after 150ms
+thread.run(5);
+```
+
+Arguments:
+  - `eventName` - the name of the event to register the callback with.
+  - `callback` - the callback to invoke with the payload when `threadEmit(eventName)` is invoked from the thread.
+
+
 ### `thread.setFn(function[, context])`
 Sets the provided function as the main function that will be executed when invoking thread.run().
 
 Arguments:
   - `function` - the function to set as the thread's main function.
   - `context` (optional) - an object which will be the context that the provided function will run under (i.e. the value of `this` in the function body).
+
+
+### `thread.setContext(context)`
+Assigns the provided context as the thread's function's `this` value.
+
+Arguments:
+  - `context` - an object which will be the context that the thread's function will run under (i.e. the value of `this` in the function body).
+
+
+### `thread.setScripts(scriptsArray)`
+Loads each external script provided in the `scriptsArray` on the thread's global scope.
+
+Example:
+```javascript
+var thread = SimplyThread.create();
+thread.setScripts(['https://code.jquery.com/jquery-3.1.1.js', 'MODULE:lodash']); // jQuery and Lodash will now be available on the thread's global scope.
+
+thread.setScripts([function(){
+    self.globalVariable = 'abc123';
+}]) // globalVariable will now be available on the thread's global scope.
+```
+
+Arguments:
+  - `scriptsArray` - array of scripts that the thread should attempt to load under its global scope. Possible values for scripts:
+      - *URL path* - absolute path of a javascript file.
+      - *Module path* - a string representing the name of an NPM package that'll be loaded via [Browserify](http://wzrd.in), preceded by a 'MODULE:' prefix.
+      - *Function* - A function that'll be run on the thread's global scope.
+
+
+### `thread.setGlobals(object)`
+Sets/assigns each key:value from the provided object on the thread's global scope.
+
+Example:
+```javascript
+var thread = SimplyThread.create(function(){
+    return typeof myVariable;
+});
+
+thread.run().then(function(result){ console.log(result);
+    }) // Logs 'undefined'
+
+thread.setGlobals({myVariable: 'someValue'});
+thread.run().then(function(result){ console.log(result);
+    }) // Logs 'string'
+```
+
+Arguments:
+  - `object` - an object containing key:value pairs which will be set on the thread's global scope. The key will represent the name of the global variable that'll be assigned to its associated value.
 
 
 ### `thread.kill()`
