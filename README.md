@@ -127,12 +127,10 @@ var thread = SimplyThread.create(function(){
     return typeof myVariable;
 });
 
-thread.run().then(function(result){ console.log(result);
-    }) // Logs 'undefined'
+thread.run().then(function(result){ console.log(result);}) // Logs 'undefined'
 
 thread.setGlobals({myVariable: 'someValue'});
-thread.run().then(function(result){ console.log(result);
-    }) // Logs 'string'
+thread.run().then(function(result){ console.log(result);}) // Logs 'string'
 ```
 
 Arguments:
