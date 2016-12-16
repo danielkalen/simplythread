@@ -2,7 +2,7 @@
 var slice = [].slice;
 
 (function() {
-  var SimplyThread, Thread, ThreadInterface, circularReference, currentID, functionReference, genTransactionID, normalizeRejection, parseFnsInArgs, parseFnsInObjects, promisePolyfill, stringifyFnsInArgs, stringifyFnsInObjects, supports, workerScript, workerScriptRegEx;
+  var SimplyThread, Thread, ThreadInterface, circularReference, currentID, functionReference, genTransactionID, normalizeRejection, parseFnsInArgs, parseFnsInObjects, promisePolyfill, stringifyFnsInArgs, stringifyFnsInObjects, supports, threadEmit, workerScript, workerScriptRegEx;
   supports = {
     'workers': !!window.Worker && !!window.Blob && !!window.URL,
     'promises': !!window.Promise
@@ -65,6 +65,11 @@ var slice = [].slice;
         }
       };
     })(this));
+  };
+  ThreadInterface.prototype.on = function(event, callback) {
+    if (typeof event === 'string' && typeof callback === 'function') {
+      return this.thread.socket.on(event, callback);
+    }
   };
   ThreadInterface.prototype.setFn = function(fn, context) {
     if (typeof fn === 'function') {
@@ -230,23 +235,21 @@ var slice = [].slice;
     return URL.createObjectURL(blob);
   };
   Thread.prototype.openSocket = function() {
-    var socketCallbacks;
     if (this.worker) {
-      socketCallbacks = [];
       this.worker.addEventListener('message', (function(_this) {
         return function(e) {
-          if (e.data.ID && socketCallbacks[e.data.ID]) {
-            return socketCallbacks[e.data.ID](e.data);
+          if (e.data.ID && _this.socket.callbacks[e.data.ID]) {
+            return _this.socket.callbacks[e.data.ID](typeof e.data.ID === 'string' ? e.data.payload : e.data);
           }
         };
       })(this));
-      return {
-        on: function(ID, callback) {
-          return socketCallbacks[ID] = callback;
-        },
-        callbacks: socketCallbacks
-      };
     }
+    return {
+      on: function(ID, callback) {
+        return this.callbacks[ID] = callback;
+      },
+      callbacks: {}
+    };
   };
   Thread.prototype.sendCommand = function(command, payload) {
     return new Promise((function(_this) {
@@ -277,7 +280,7 @@ var slice = [].slice;
               break;
             case 'setFn':
               if (typeof payload === 'function') {
-                return _this.fn = payload;
+                return _this.fn = eval("(" + (payload.toString()) + ")");
               }
               break;
             case 'setContext':
@@ -289,7 +292,7 @@ var slice = [].slice;
   };
   currentID = 0;
   genTransactionID = function() {
-    return '' + (++currentID);
+    return ++currentID;
   };
   normalizeRejection = function(err) {
     var proxyErr;
@@ -300,6 +303,10 @@ var slice = [].slice;
     } else {
       return err;
     }
+  };
+  threadEmit = function(event, payload) {
+    var base;
+    return typeof (base = this.socket.callbacks)[event] === "function" ? base[event](payload) : void 0;
   };
   workerScriptRegEx = /^\s*function\s*\(\)\s*\{\s*([\w\W]+)\s*\}\s*$/;
   workerScript = function() {
@@ -383,16 +390,22 @@ var slice = [].slice;
           return postMessage({
             ID: ID,
             status: 'resolve',
-            'payload': stringifyFnsInObjects(result)
+            payload: stringifyFnsInObjects(result)
           });
         })["catch"](function(result) {
           return postMessage({
             ID: ID,
             status: 'reject',
-            'payload': stringifyFnsInObjects(result)
+            payload: stringifyFnsInObjects(result)
           });
         });
       }
+    };
+    threadEmit = function(event, payload) {
+      return postMessage({
+        ID: event,
+        payload: stringifyFnsInObjects(payload)
+      });
     };
     normalizeError = function(arg1) {
       var message, name, stack;

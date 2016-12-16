@@ -65,12 +65,13 @@ workerScript = ()->
 
 		unless hasError
 			Promise.resolve(result)
-				.then (result)-> postMessage {ID, status:'resolve', 'payload':stringifyFnsInObjects(result)}
-				.catch (result)-> postMessage {ID, status:'reject', 'payload':stringifyFnsInObjects(result)}
+				.then (result)-> postMessage {ID, status:'resolve', payload:stringifyFnsInObjects(result)}
+				.catch (result)-> postMessage {ID, status:'reject', payload:stringifyFnsInObjects(result)}
 
 
 
-
+	threadEmit = (event, payload)->
+		postMessage {ID:event, payload:stringifyFnsInObjects(payload)}
 
 
 

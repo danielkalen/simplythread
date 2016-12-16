@@ -21,6 +21,17 @@ FN =
 	globals: (propName)-> @[propName]
 	globalsInvoker: (propName, arg)-> @[propName](arg)
 	invoker: (a, b)-> a(b)
+	emitter: ()->
+		threadEmit('someEvent', 'first')
+		setTimeout ()->
+			threadEmit('diffEvent', 'second')
+		, 20
+		setTimeout ()->
+			threadEmit('someEvent', 'third')
+		, 35
+		setTimeout ()->
+			threadEmit('diffEvent', 'fourth')
+		, 45
 
 
 suite "SimplyThread", ()->
@@ -73,7 +84,7 @@ suite "SimplyThread", ()->
 
 
 	suite "Thread", ()->
-		emptyThread = errThread = adderThread = adderPromiseThread = adderPromiseFailThread = delayedPromiseThread = subtracterThread = contextThread = contextReturnThread = globalsThread = globalsInvokerThread = invokerThread = null
+		emptyThread = errThread = adderThread = adderPromiseThread = adderPromiseFailThread = delayedPromiseThread = subtracterThread = contextThread = contextReturnThread = globalsThread = globalsInvokerThread = invokerThread  = emitterThread = null
 		suiteSetup ()->
 			emptyThread = SimplyThread.create()
 			errThread = SimplyThread.create FN.err
@@ -87,6 +98,7 @@ suite "SimplyThread", ()->
 			globalsThread = SimplyThread.create FN.globals
 			globalsInvokerThread = SimplyThread.create FN.globalsInvoker
 			invokerThread = SimplyThread.create FN.invoker
+			emitterThread = SimplyThread.create FN.emitter
 		
 		# ==== Run =================================================================================
 		suite ".run()", ()->
@@ -154,6 +166,23 @@ suite "SimplyThread", ()->
 					result('simplythread').should.equal 'SIMPLYTHREAD'
 
 
+
+
+
+
+		suite ".on()", ()->
+			test "Will register an event and its callback to be invoked every time threadEmit(event) is invoked from the thread's main function", ()-> new Promise (resolve)=>
+				@slow(700)
+				emitCount = someEvent:0, diffEvent:0
+				emitterThread.on 'someEvent', (payload)-> if emitCount.someEvent++ then payload.should.equal('third') else payload.should.equal('first')
+				emitterThread.on 'diffEvent', (payload)-> if emitCount.diffEvent++ then payload.should.equal('fourth') else payload.should.equal('second')
+
+				emitterThread.run().then ()->
+					setTimeout ()->
+						emitCount.someEvent.should.equal 2
+						emitCount.diffEvent.should.equal 2
+						resolve()
+					, 75
 
 
 

@@ -27,6 +27,10 @@ ThreadInterface::run = (args...)-> new Promise (resolve, reject)=>
 		reject new Error('No function was set for this thread.')
 
 
+ThreadInterface::on = (event, callback)-> if typeof event is 'string' and typeof callback is 'function'
+	@thread.socket.on(event, callback)
+
+
 ThreadInterface::setFn = (fn, context)->
 	if typeof fn is 'function'
 		@fn = fn

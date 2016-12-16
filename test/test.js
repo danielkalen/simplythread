@@ -64,6 +64,18 @@ FN = {
   },
   invoker: function(a, b) {
     return a(b);
+  },
+  emitter: function() {
+    threadEmit('someEvent', 'first');
+    setTimeout(function() {
+      return threadEmit('diffEvent', 'second');
+    }, 20);
+    setTimeout(function() {
+      return threadEmit('someEvent', 'third');
+    }, 35);
+    return setTimeout(function() {
+      return threadEmit('diffEvent', 'fourth');
+    }, 45);
   }
 };
 
@@ -108,8 +120,8 @@ suite("SimplyThread", function() {
     });
   });
   return suite("Thread", function() {
-    var adderPromiseFailThread, adderPromiseThread, adderThread, contextReturnThread, contextThread, delayedPromiseThread, emptyThread, errThread, globalsInvokerThread, globalsThread, invokerThread, subtracterThread;
-    emptyThread = errThread = adderThread = adderPromiseThread = adderPromiseFailThread = delayedPromiseThread = subtracterThread = contextThread = contextReturnThread = globalsThread = globalsInvokerThread = invokerThread = null;
+    var adderPromiseFailThread, adderPromiseThread, adderThread, contextReturnThread, contextThread, delayedPromiseThread, emitterThread, emptyThread, errThread, globalsInvokerThread, globalsThread, invokerThread, subtracterThread;
+    emptyThread = errThread = adderThread = adderPromiseThread = adderPromiseFailThread = delayedPromiseThread = subtracterThread = contextThread = contextReturnThread = globalsThread = globalsInvokerThread = invokerThread = emitterThread = null;
     suiteSetup(function() {
       emptyThread = SimplyThread.create();
       errThread = SimplyThread.create(FN.err);
@@ -122,7 +134,8 @@ suite("SimplyThread", function() {
       contextReturnThread = SimplyThread.create(FN.contextReturn);
       globalsThread = SimplyThread.create(FN.globals);
       globalsInvokerThread = SimplyThread.create(FN.globalsInvoker);
-      return invokerThread = SimplyThread.create(FN.invoker);
+      invokerThread = SimplyThread.create(FN.invoker);
+      return emitterThread = SimplyThread.create(FN.emitter);
     });
     suite(".run()", function() {
       test("will execute the given function with given arguments and return a thenable object (promise)", function() {
@@ -191,6 +204,41 @@ suite("SimplyThread", function() {
           result.should.be.a('function');
           return result('simplythread').should.equal('SIMPLYTHREAD');
         });
+      });
+    });
+    suite(".on()", function() {
+      return test("Will register an event and its callback to be invoked every time threadEmit(event) is invoked from the thread's main function", function() {
+        return new Promise((function(_this) {
+          return function(resolve) {
+            var emitCount;
+            _this.slow(700);
+            emitCount = {
+              someEvent: 0,
+              diffEvent: 0
+            };
+            emitterThread.on('someEvent', function(payload) {
+              if (emitCount.someEvent++) {
+                return payload.should.equal('third');
+              } else {
+                return payload.should.equal('first');
+              }
+            });
+            emitterThread.on('diffEvent', function(payload) {
+              if (emitCount.diffEvent++) {
+                return payload.should.equal('fourth');
+              } else {
+                return payload.should.equal('second');
+              }
+            });
+            return emitterThread.run().then(function() {
+              return setTimeout(function() {
+                emitCount.someEvent.should.equal(2);
+                emitCount.diffEvent.should.equal(2);
+                return resolve();
+              }, 75);
+            });
+          };
+        })(this));
       });
     });
     suite(".setFn()", function() {

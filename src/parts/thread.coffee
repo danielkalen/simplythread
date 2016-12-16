@@ -29,16 +29,15 @@ Thread::createURI = ()->
 	return URL.createObjectURL(blob)
 
 
-Thread::openSocket = ()-> if @worker
-	socketCallbacks = []
-	
-	@worker.addEventListener 'message', (e)=>
-		if e.data.ID and socketCallbacks[e.data.ID]
-			socketCallbacks[e.data.ID](e.data)
+Thread::openSocket = ()->
+	if @worker
+		@worker.addEventListener 'message', (e)=>
+			if e.data.ID and @socket.callbacks[e.data.ID] # e.data.ID will be a string if it's an event ID, otherwise it'll be a number
+				@socket.callbacks[e.data.ID](if typeof e.data.ID is 'string' then e.data.payload else e.data)
 
 	return {
-		on: (ID, callback)-> socketCallbacks[ID] = callback
-		callbacks: socketCallbacks
+		on: (ID, callback)-> @callbacks[ID] = callback
+		callbacks: {}
 	}
 
 
@@ -58,8 +57,8 @@ Thread::sendCommand = (command, payload)-> new Promise (resolve, reject)=>
 			when 'run'
 				@fn.apply(@context, payload) if @fn
 			
-			when 'setFn'
-				@fn = payload if typeof payload is 'function'
+			when 'setFn' # We stringify the function 'eval' it in order for it to gain access to the local scope, or more importantly to the fallback threadEmit function
+				@fn = eval("(#{payload.toString()})") if typeof payload is 'function'
 
 			when 'setContext'
 				@context = payload
@@ -67,7 +66,7 @@ Thread::sendCommand = (command, payload)-> new Promise (resolve, reject)=>
 
 
 currentID = 0
-genTransactionID = ()-> ''+(++currentID)
+genTransactionID = ()-> ++currentID
 
 
 normalizeRejection = (err)->
@@ -78,6 +77,10 @@ normalizeRejection = (err)->
 	else
 		return err
 
+
+
+threadEmit = (event, payload)-> # Fallback threadEmit function for env not supporting threads/workers
+	@socket.callbacks[event]?(payload)
 
 
 
