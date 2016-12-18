@@ -3,7 +3,6 @@
   "version": "1.7.0",
   "description": "JS Threads: Run arbitrary functions in immediatly-spawned browser threads with an async workflow",
   "main": "app.coffee",
-  "dependencies": {},
   "devDependencies": {
     "chai": "^3.5.0",
     "closure-compiler-service": "^0.6.1",
@@ -27,7 +26,7 @@
     "live-server": "^1.1.0",
     "mocha": "^2.5.3",
     "phantomjs-prebuilt": "^2.1.14",
-    "simplyimport": "^2.3.3",
+    "simplyimport": "^2.3.4",
     "simplywatch": "^2.3.2",
     "uglify-js": "^2.6.2"
   },
