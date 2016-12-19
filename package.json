@@ -3,6 +3,9 @@
   "version": "1.7.0",
   "description": "JS Threads: Run arbitrary functions in immediatly-spawned browser threads with an async workflow",
   "main": "app.coffee",
+  "dependencies": {
+    "javascript-stringify-plus": "^1.6.0"
+  },
   "devDependencies": {
     "chai": "^3.5.0",
     "closure-compiler-service": "^0.6.1",
