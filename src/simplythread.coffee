@@ -1,8 +1,4 @@
 do ()->
-	supports = 
-		'workers': !!window.Worker and !!window.Blob and !!window.URL
-		'promises': !!window.Promise
-
 	SimplyThread = new ()->
 		threads = []
 
@@ -32,10 +28,11 @@ do ()->
 
 
 
+	import parts/helpers
+	import parts/promise-polyfill
 	import parts/threadInterface
 	import parts/thread
 	import parts/worker
-	import parts/promise-polyfill
 	SimplyThread.version = import ../.config/.version
 
 	if exports?.module?

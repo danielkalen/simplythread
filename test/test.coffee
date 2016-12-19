@@ -269,24 +269,26 @@ suite "SimplyThread", ()->
 
 		# ==== Set Context =================================================================================
 		suite ".setContext()", ()->
-			test "will set the function's 'this' keyword to the given argument", ()->				
+			test "will set the thread's function's 'this' keyword to the provided argument", ()->				
 				contextThread
 					.setContext {'prop': 5}
 					.run(8).then (result)->
 						result.should.equal 13
 
 
-			test "will use contexts that have function, but will omit them", ()->
+			test "will use contexts that have functions", ()->
 				contextReturnThread
 					.setContext {'name':'someObject', 'fn':()-> 'blabla'}
 					.run().then (result)->
 						result.should.be.an 'object'
 						should.exist result.name
-						should.not.exist result.fn
+						should.exist result.fn
+						result.name.should.equal 'someObject'
+						result.fn().should.equal 'blabla'
 
 
-			test "will use contexts that have circular references (1 level max) and will omit DOM objects", ()->
-				obj = {'subA':{'prop1','prop2','prop3'}, 'subB':{'prop1','prop2','prop3'}, 'subC':{'prop1','prop2','prop3'} }
+			test "will use contexts that have circular references and will omit DOM objects", ()->
+				obj = subA:{'prop1','prop2','prop3'}, subB:{'prop1','prop2','prop3'}, subC:{'prop1','prop2','prop3'} 
 				for sub of obj
 					obj[sub].parent = obj
 					obj[sub].self = obj[sub]
@@ -306,24 +308,24 @@ suite "SimplyThread", ()->
 						should.exist result.subA.prop1
 						should.exist result.subB.prop2
 						should.exist result.subC.prop3
-						should.not.exist result.subA.self
-						should.not.exist result.subB.self
-						should.not.exist result.subC.self
+						should.exist result.subA.self
+						should.exist result.subB.self
+						should.exist result.subC.self
 						should.exist result.subA.parent
 						should.exist result.subB.parent
 						should.exist result.subC.parent
 						should.exist result.subA.DOM$
 						should.exist result.subB.DOM$
 						should.exist result.subC.DOM$
-						should.exist result.subA.DOM
-						should.exist result.subB.DOM
-						should.exist result.subC.DOM
-						result.subA.DOM.should.be.empty
-						result.subB.DOM.should.be.empty
-						result.subC.DOM.should.be.empty
+						should.not.exist result.subA.DOM
+						should.not.exist result.subB.DOM
+						should.not.exist result.subC.DOM
 
-						result.self.should.deep.equal(result)
-						result.subA.parent.should.deep.equal(result)
+						result.self.should.equal(result)
+						result.subA.parent.should.equal(result)
+						result.subA.self.should.equal(result.subA)
+						result.subB.self.should.equal(result.subB)
+						result.subC.self.should.equal(result.subC)
 
 
 

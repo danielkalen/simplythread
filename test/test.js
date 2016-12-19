@@ -307,14 +307,14 @@ suite("SimplyThread", function() {
       });
     });
     suite(".setContext()", function() {
-      test("will set the function's 'this' keyword to the given argument", function() {
+      test("will set the thread's function's 'this' keyword to the provided argument", function() {
         return contextThread.setContext({
           'prop': 5
         }).run(8).then(function(result) {
           return result.should.equal(13);
         });
       });
-      test("will use contexts that have function, but will omit them", function() {
+      test("will use contexts that have functions", function() {
         return contextReturnThread.setContext({
           'name': 'someObject',
           'fn': function() {
@@ -323,23 +323,25 @@ suite("SimplyThread", function() {
         }).run().then(function(result) {
           result.should.be.an('object');
           should.exist(result.name);
-          return should.not.exist(result.fn);
+          should.exist(result.fn);
+          result.name.should.equal('someObject');
+          return result.fn().should.equal('blabla');
         });
       });
-      return test("will use contexts that have circular references (1 level max) and will omit DOM objects", function() {
+      return test("will use contexts that have circular references and will omit DOM objects", function() {
         var obj, sub;
         obj = {
-          'subA': {
+          subA: {
             'prop1': 'prop1',
             'prop2': 'prop2',
             'prop3': 'prop3'
           },
-          'subB': {
+          subB: {
             'prop1': 'prop1',
             'prop2': 'prop2',
             'prop3': 'prop3'
           },
-          'subC': {
+          subC: {
             'prop1': 'prop1',
             'prop2': 'prop2',
             'prop3': 'prop3'
@@ -361,23 +363,23 @@ suite("SimplyThread", function() {
           should.exist(result.subA.prop1);
           should.exist(result.subB.prop2);
           should.exist(result.subC.prop3);
-          should.not.exist(result.subA.self);
-          should.not.exist(result.subB.self);
-          should.not.exist(result.subC.self);
+          should.exist(result.subA.self);
+          should.exist(result.subB.self);
+          should.exist(result.subC.self);
           should.exist(result.subA.parent);
           should.exist(result.subB.parent);
           should.exist(result.subC.parent);
           should.exist(result.subA.DOM$);
           should.exist(result.subB.DOM$);
           should.exist(result.subC.DOM$);
-          should.exist(result.subA.DOM);
-          should.exist(result.subB.DOM);
-          should.exist(result.subC.DOM);
-          result.subA.DOM.should.be.empty;
-          result.subB.DOM.should.be.empty;
-          result.subC.DOM.should.be.empty;
-          result.self.should.deep.equal(result);
-          return result.subA.parent.should.deep.equal(result);
+          should.not.exist(result.subA.DOM);
+          should.not.exist(result.subB.DOM);
+          should.not.exist(result.subC.DOM);
+          result.self.should.equal(result);
+          result.subA.parent.should.equal(result);
+          result.subA.self.should.equal(result.subA);
+          result.subB.self.should.equal(result.subB);
+          return result.subC.self.should.equal(result.subC);
         });
       });
     });

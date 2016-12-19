@@ -11,7 +11,7 @@ Thread = (@fn, @fnString)->
 
 # ==== Prototype =================================================================================
 Thread::init = ()->
-	if not supports.workers
+	if not SUPPORTS.workers
 		return false
 	else
 		return new Worker(@createURI())
@@ -19,12 +19,15 @@ Thread::init = ()->
 
 
 Thread::createURI = ()->
-	workerScriptContents = workerScript.toString().match(workerScriptRegEx)[1]
+	workerScriptContents = workerScript.toString().match(functionBodyRegEx)[1]
+	dependencies = exposeStringifyFn.toString().match(functionBodyRegEx)[1]
+	dependencies += "var PRIMITIVE_TYPES = #{JSON.stringify(PRIMITIVE_TYPES)};"
+	dependencies += "var STRINGIFY_OPTS = #{JSON.stringify(STRINGIFY_OPTS)};"
 
-	if not supports.promises
-		workerScriptContents += promisePolyfill
+	if not SUPPORTS.promises
+		dependencies += promisePolyfill
 	
-	blob = new Blob([workerScriptContents], {type:'application/javascript'});
+	blob = new Blob([dependencies+workerScriptContents], {type:'application/javascript'});
 	
 	return URL.createObjectURL(blob)
 
@@ -33,7 +36,7 @@ Thread::openSocket = ()->
 	if @worker
 		@worker.addEventListener 'message', (e)=>
 			if e.data.ID and @socket.callbacks[e.data.ID] # e.data.ID will be a string if it's an event ID, otherwise it'll be a number
-				@socket.callbacks[e.data.ID](if typeof e.data.ID is 'string' then e.data.payload else e.data)
+				@socket.callbacks[e.data.ID](e.data)
 
 	return {
 		on: (ID, callback)-> @callbacks[ID] = callback
@@ -47,7 +50,7 @@ Thread::sendCommand = (command, payload)-> new Promise (resolve, reject)=>
 		if command is 'run'
 			@socket.on ID=genTransactionID(), (data)-> switch data.status
 				when 'resolve' then resolve(data.payload)
-				when 'reject' then reject(normalizeRejection data.payload)
+				when 'reject' then reject(data.payload)
 					
 		@worker.postMessage {command, payload, ID}
 
@@ -62,20 +65,6 @@ Thread::sendCommand = (command, payload)-> new Promise (resolve, reject)=>
 
 			when 'setContext'
 				@context = payload
-
-
-
-currentID = 0
-genTransactionID = ()-> ++currentID
-
-
-normalizeRejection = (err)->
-	if err and typeof err is 'object' and window[err.name] and window[err.name].constructor is Function
-		proxyErr = if err.name and window[err.name] then new window[err.name](err.message) else new Error(err.message)
-		proxyErr.stack = err.stack
-		return proxyErr
-	else
-		return err
 
 
 

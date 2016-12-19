@@ -1,6 +1,3 @@
-circularReference = '**_circular_**'
-functionReference = '**_function_**'
-
 ## ==========================================================================
 ## Thread Public Interface
 ## ========================================================================== 
@@ -18,17 +15,18 @@ ThreadInterface = (@fn)->
 
 
 # ==== Prototype =================================================================================
-ThreadInterface::run = (args...)-> new Promise (resolve, reject)=>
+ThreadInterface::run = (args...)->
 	if typeof @fn is 'function'
-		@thread.sendCommand('run', stringifyFnsInArgs(args)).then (result)->
-			resolve parseFnsInObjects(result)
-		, reject
+		@thread.sendCommand('run', @_stringifyPayload(args))
+			.then (payload)=> @_parsePayload(payload)
+			.catch (rejection)=> Promise.reject @_parseRejection(rejection)
 	else
-		reject new Error('No function was set for this thread.')
+		Promise.reject new Error('No function was set for this thread.')
 
 
 ThreadInterface::on = (event, callback)-> if typeof event is 'string' and typeof callback is 'function'
-	@thread.socket.on(event, callback)
+	@thread.socket.on event, (message)=>
+		callback @_parsePayload(message.payload)
 
 
 ThreadInterface::setFn = (fn, context)->
@@ -43,44 +41,17 @@ ThreadInterface::setFn = (fn, context)->
 
 
 ThreadInterface::setGlobals = (obj)->		
-	@thread.sendCommand('setGlobals', stringifyFnsInObjects(obj))
+	@thread.sendCommand('setGlobals', @_stringifyPayload(obj))
 	return @
 
 
 ThreadInterface::setScripts = (scripts)->
-	@thread.sendCommand('setScripts', stringifyFnsInObjects(scripts))
+	@thread.sendCommand('setScripts', @_stringifyPayload(scripts))
 	return @
 
 
 ThreadInterface::setContext = (context)->
-	try
-		contextString = JSON.stringify context
-	catch
-		contextString = do ()->
-			cache = []
-			
-			stringified = JSON.stringify context, (key,value)->
-				if value isnt null and typeof value is 'object'
-					if cache.indexOf(value) isnt -1
-						if value is context
-							return circularReference
-						else if value?.nodeName and value.nodeType
-							return value
-						else if typeof value is 'function'
-							return functionReference+value.toString()
-						else
-							return
-					
-					else
-						cache.push(value)
-
-				return value
-						
-			cache = null
-			return stringified
-		
-
-	@thread.sendCommand('setContext', contextString)
+	@thread.sendCommand('setContext', @_stringifyPayload(context))
 	return @
 
 
@@ -89,90 +60,32 @@ ThreadInterface::kill = ()->
 	@status = 'dead'
 
 	SimplyThread.remove(@)
-
 	return @
 
 
+ThreadInterface::_stringifyPayload = (payload)->
+	output = type: typeof payload
+	output.data = if PRIMITIVE_TYPES[output.type] then payload else @javascriptStringify(payload, null, null, STRINGIFY_OPTS)
+	return output
 
 
-
-
-
-
-
-
-# ==== Helpers =================================================================================
-stringifyFnsInArgs = (args)->
-	newArgs = []
-	
-	for arg,index in args
-		if typeof arg is 'function'
-			newArgs[index] = functionReference+arg.toString()
-		else
-			newArgs[index] = arg
-
-	return newArgs
-
-
-stringifyFnsInObjects = (object, cache=[])->
-	if typeof object is 'function'
-		return functionReference+object.toString()
-	
-	else if typeof object is 'object'
-		cache.push(object)
-		newObj = if Array.isArray(object) then [] else {}
-
-		for key,value of object
-			if typeof value is 'object' and cache.indexOf(value) is -1
-				cache.push(value)
-				newObj[key] = stringifyFnsInObjects(value, cache)
-			
-			else if typeof value is 'function'
-				newObj[key] = functionReference+value.toString()
-
-			else
-				newObj[key] = value
-
-		return newObj
-
+ThreadInterface::_parsePayload = (payload)->
+	if PRIMITIVE_TYPES[payload.type]
+		return payload.data
 	else
-		return object
+		return eval "(#{payload.data})"
 
 
+ThreadInterface::_parseRejection = (rejection)->
+	err = @_parsePayload(rejection)
+	if err and typeof err is 'object' and window[err.name] and window[err.name].constructor is Function
+		proxyErr = if err.name and window[err.name] then new window[err.name](err.message) else new Error(err.message)
+		proxyErr.stack = err.stack
+		return proxyErr
+	else
+		return err
 
-
-
-
-parseFnsInArgs = (args)->
-	newArgs = []
-	___ = undefined
-	
-	for arg,index in args
-		if typeof arg is 'string' and arg.indexOf(functionReference) is 0
-			newArgs[index] = eval('___ ='+arg.replace functionReference, '')
-		else
-			newArgs[index] = arg
-
-	return newArgs
-
-
-
-parseFnsInObjects = (object, cache=[])->	
-	___ = undefined
-	if typeof object is 'string' and object.indexOf(functionReference) is 0
-		return eval('___ ='+object.replace functionReference, '')
-
-	cache.push(object)
-	
-	for key,value of object
-		if typeof value is 'object' and cache.indexOf(value) is -1
-			cache.push(value)
-			object[key] = parseFnsInObjects(value, cache)
-		
-		else if typeof value is 'string' and value.indexOf(functionReference) is 0
-			object[key] = eval('___ ='+value.replace functionReference, '')
-
-	return object
+exposeStringifyFn.call ThreadInterface::
 
 
 
