@@ -46,7 +46,7 @@ ThreadInterface::setGlobals = (obj)->
 
 
 ThreadInterface::setScripts = (scripts)->
-	@thread.sendCommand('setScripts', @_stringifyPayload(scripts))
+	@thread.sendCommand('setScripts', @_stringifyPayload([].concat scripts))
 	return @
 
 

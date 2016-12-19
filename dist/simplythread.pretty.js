@@ -420,7 +420,7 @@ var slice = [].slice;
     return this;
   };
   ThreadInterface.prototype.setScripts = function(scripts) {
-    this.thread.sendCommand('setScripts', this._stringifyPayload(scripts));
+    this.thread.sendCommand('setScripts', this._stringifyPayload([].concat(scripts)));
     return this;
   };
   ThreadInterface.prototype.setContext = function(context) {
@@ -463,9 +463,9 @@ var slice = [].slice;
     }
   };
   exposeStringifyFn.call(ThreadInterface.prototype);
-  Thread = function(fn1, fnString1) {
+  Thread = function(fn1, fnString) {
     this.fn = fn1;
-    this.fnString = fnString1;
+    this.fnString = fnString;
     this.worker = this.init();
     this.socket = this.openSocket();
     if (this.fn) {
@@ -555,9 +555,10 @@ var slice = [].slice;
     return typeof (base = this.socket.callbacks)[event] === "function" ? base[event](payload) : void 0;
   };
   workerScript = function() {
-    var _parsePayload, _stringifyError, _stringifyPayload, fnContext, fnToExecute, onmessage, run, setContext, setFn, setGlobals, setScripts;
+    var _fetchExternal, _fetchModule, _parsePayload, _stringifyError, _stringifyPayload, fnContext, fnToExecute, onmessage, run, scriptsLoaded, setGlobals, setScripts;
     fnToExecute = null;
     fnContext = null;
+    scriptsLoaded = Promise.resolve();
     _stringifyPayload = function(payload) {
       var output;
       output = {
@@ -582,20 +583,50 @@ var slice = [].slice;
         return eval("(" + payload.data + ")");
       }
     };
+    _fetchExternal = function(url) {
+      return new Promise(function(resolve, reject) {
+        var request;
+        request = new XMLHttpRequest();
+        request.open('GET', url, true);
+        request.onerror = reject;
+        request.onload = function() {
+          var ref;
+          if ((200 >= (ref = this.status) && ref < 400)) {
+            return resolve(this.response);
+          } else {
+            return reject(new Error("External fetch failed (status:" + request.status + "): " + request.response));
+          }
+        };
+        return request.send();
+      });
+    };
+    _fetchModule = function(module) {
+      var moduleLabel, moduleName;
+      moduleName = module.split('#')[0];
+      moduleLabel = module.split('#')[1] || moduleName;
+      moduleName = moduleName.replace(/\//g, '%2F');
+      return _fetchExternal("https://wzrd.in/bundle/" + moduleName).then(function(result) {
+        var loader;
+        if (result) {
+          loader = eval(result);
+          return self[moduleLabel] = loader(moduleName);
+        }
+      });
+    };
     onmessage = function(e) {
       var ID, command, payload;
       command = e.data.command;
       payload = e.data.payload;
       ID = e.data.ID;
       switch (command) {
-        case 'setContext':
-          return setContext(_parsePayload(payload));
         case 'setGlobals':
           return setGlobals(_parsePayload(payload));
         case 'setScripts':
           return setScripts(_parsePayload(payload));
+        case 'setContext':
+          return fnContext = _parsePayload(payload);
         case 'setFn':
-          return setFn(payload);
+          return fnToExecute = eval("(" + payload + ")");
         case 'run':
           return run(ID, _parsePayload(payload));
       }
@@ -608,53 +639,79 @@ var slice = [].slice;
       }
     };
     setScripts = function(scripts) {
-      var i, len, script;
-      for (i = 0, len = scripts.length; i < len; i++) {
-        script = scripts[i];
-        if (typeof script === 'function') {
-          script.call(self);
-        } else {
-          importScripts(script);
+      return scriptsLoaded = new Promise(function(finalResolve, finalReject) {
+        var completedScripts, i, len, script, scriptPromise;
+        completedScripts = 0;
+        for (i = 0, len = scripts.length; i < len; i++) {
+          script = scripts[i];
+          scriptPromise = (function() {
+            switch (typeof script) {
+              case 'function':
+                return Promise.resolve(script.call(self));
+              case 'string':
+                if (script.slice(0, 7) === 'MODULE:') {
+                  return _fetchModule(script.slice(7));
+                } else if (script.slice(0, 5) === 'file:') {
+                  return Promise.resolve(importScripts(script));
+                } else {
+                  return _fetchExternal(script).then(function(result) {
+                    if (result) {
+                      return eval("(" + result + ")");
+                    }
+                  });
+                }
+                break;
+              default:
+                return Promise.resolve();
+            }
+          })();
+          scriptPromise.then(function() {
+            if (++completedScripts === scripts.length) {
+              return finalResolve();
+            }
+          })["catch"](finalReject);
         }
-      }
-    };
-    setContext = function(context) {
-      return fnContext = context;
-    };
-    setFn = function(fnString) {
-      return eval("fnToExecute = " + fnString);
+      });
     };
     run = function(ID, args) {
-      var err, error, hasError, result;
       if (args == null) {
         args = [];
       }
-      try {
-        result = fnToExecute.apply(fnContext, args);
-      } catch (error) {
-        err = error;
-        postMessage({
+      return scriptsLoaded.then(function() {
+        var err, error, hasError, result;
+        try {
+          result = fnToExecute.apply(fnContext, args);
+        } catch (error) {
+          err = error;
+          postMessage({
+            ID: ID,
+            status: 'reject',
+            payload: _stringifyError(err)
+          });
+          hasError = true;
+        }
+        if (!hasError) {
+          return Promise.resolve(result).then(function(result) {
+            return postMessage({
+              ID: ID,
+              status: 'resolve',
+              payload: _stringifyPayload(result)
+            });
+          })["catch"](function(result) {
+            return postMessage({
+              ID: ID,
+              status: 'reject',
+              payload: _stringifyPayload(result)
+            });
+          });
+        }
+      })["catch"](function(err) {
+        return postMessage({
           ID: ID,
           status: 'reject',
           payload: _stringifyError(err)
         });
-        hasError = true;
-      }
-      if (!hasError) {
-        return Promise.resolve(result).then(function(result) {
-          return postMessage({
-            ID: ID,
-            status: 'resolve',
-            payload: _stringifyPayload(result)
-          });
-        })["catch"](function(result) {
-          return postMessage({
-            ID: ID,
-            status: 'reject',
-            payload: _stringifyPayload(result)
-          });
-        });
-      }
+      });
     };
     threadEmit = function(event, payload) {
       return postMessage({

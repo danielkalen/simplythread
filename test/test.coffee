@@ -246,19 +246,65 @@ suite "SimplyThread", ()->
 
 		# ==== Set External Scripts =================================================================================
 		suite ".setScripts()", ()->
-			test "will take an array of strings that act as network paths for external scripts and loads them inside the thread", ()->				
+			test "will take an array of strings that act as network paths for external scripts and loads them inside the thread's global scope", ()->				
 				globalsThread
 					.setScripts ["#{basePath}/test/samplescript.js"]
 					.run('sampleScriptName').then (result)->
 						result.should.equal 'just a sample script'
 			
 
+			test "will load an external script when provided in a non-array format value", ()->				
+				globalsThread
+					.setScripts "#{basePath}/test/samplescript.js"
+					.run('sampleScriptName')
+						.then (result)->
+							result.should.equal 'just a sample script'
+						.catch (err)->
+							console.log err
+			
 
-			test "can accept function arguments that will be invoked immediatly on the thread's global scope", ()->				
+			test "will reject .run() calls' promises if failed to load any of the provided scripts", ()->				
+				globalsThread
+					.setScripts ["#{basePath}/test/samplescript.js", "#{basePath}/test/nonexistent.js"]
+					.run('sampleScriptName')
+						.then (result)-> # Should never executre
+							true.should.be.false
+							result.should.equal 'just a sample script'
+						.catch (err)->
+							err.should.be.an.error
+			
+
+			test "can load an NPM module when given a module's name with a 'MODULE:' prefix", ()-> if window.location.protocol is 'file:' then @skip() else
+				SimplyThread
+					.create (arr)-> lodash.join(arr, '~')
+					.setScripts "MODULE:lodash"
+					.run(['a', 'b', 'c']).then (result)->
+						result.should.equal 'a~b~c'
+			
+
+			test "can load an NPM module and expose it under a different name using 'MODULE:xyz#custonName'", ()-> if window.location.protocol is 'file:' then @skip() else
+				SimplyThread
+					.create (timeFrame)-> TimeUNITS[timeFrame]*3
+					.setScripts "MODULE:timeunits#TimeUNITS"
+					.run('hour').then (result)->
+						result.should.equal 10800000
+			
+
+
+			test "can accept functions that will be invoked immediatly on the thread's global scope", ()->				
 				globalsThread
 					.setScripts [()-> @scriptFromFn = 'just a sample script from a function']
 					.run('scriptFromFn').then (result)->
 						result.should.equal 'just a sample script from a function'
+			
+
+
+			test "if passed functions that return a promise, that promise will be followed", ()->				
+				globalsThread
+					.setScripts [()-> new Promise (resolve)=> setTimeout ()=>
+						resolve @scriptFromFn = 'sample script via promise']
+					.run('scriptFromFn').then (result)->
+						result.should.equal 'sample script via promise'
 			
 
 

@@ -291,18 +291,70 @@ suite("SimplyThread", function() {
       });
     });
     suite(".setScripts()", function() {
-      test("will take an array of strings that act as network paths for external scripts and loads them inside the thread", function() {
+      test("will take an array of strings that act as network paths for external scripts and loads them inside the thread's global scope", function() {
         return globalsThread.setScripts([basePath + "/test/samplescript.js"]).run('sampleScriptName').then(function(result) {
           return result.should.equal('just a sample script');
         });
       });
-      return test("can accept function arguments that will be invoked immediatly on the thread's global scope", function() {
+      test("will load an external script when provided in a non-array format value", function() {
+        return globalsThread.setScripts(basePath + "/test/samplescript.js").run('sampleScriptName').then(function(result) {
+          return result.should.equal('just a sample script');
+        })["catch"](function(err) {
+          return console.log(err);
+        });
+      });
+      test("will reject .run() calls' promises if failed to load any of the provided scripts", function() {
+        return globalsThread.setScripts([basePath + "/test/samplescript.js", basePath + "/test/nonexistent.js"]).run('sampleScriptName').then(function(result) {
+          true.should.be["false"];
+          return result.should.equal('just a sample script');
+        })["catch"](function(err) {
+          return err.should.be.an.error;
+        });
+      });
+      test("can load an NPM module when given a module's name with a 'MODULE:' prefix", function() {
+        if (window.location.protocol === 'file:') {
+          return this.skip();
+        } else {
+          return SimplyThread.create(function(arr) {
+            return lodash.join(arr, '~');
+          }).setScripts("MODULE:lodash").run(['a', 'b', 'c']).then(function(result) {
+            return result.should.equal('a~b~c');
+          });
+        }
+      });
+      test("can load an NPM module and expose it under a different name using 'MODULE:xyz#custonName'", function() {
+        if (window.location.protocol === 'file:') {
+          return this.skip();
+        } else {
+          return SimplyThread.create(function(timeFrame) {
+            return TimeUNITS[timeFrame] * 3;
+          }).setScripts("MODULE:timeunits#TimeUNITS").run('hour').then(function(result) {
+            return result.should.equal(10800000);
+          });
+        }
+      });
+      test("can accept functions that will be invoked immediatly on the thread's global scope", function() {
         return globalsThread.setScripts([
           function() {
             return this.scriptFromFn = 'just a sample script from a function';
           }
         ]).run('scriptFromFn').then(function(result) {
           return result.should.equal('just a sample script from a function');
+        });
+      });
+      return test("if passed functions that return a promise, that promise will be followed", function() {
+        return globalsThread.setScripts([
+          function() {
+            return new Promise((function(_this) {
+              return function(resolve) {
+                return setTimeout(function() {
+                  return resolve(_this.scriptFromFn = 'sample script via promise');
+                });
+              };
+            })(this));
+          }
+        ]).run('scriptFromFn').then(function(result) {
+          return result.should.equal('sample script via promise');
         });
       });
     });
