@@ -40,4 +40,4 @@ do ()->
 	else if typeof define is 'function' and define.amd
 		define ['simplythread'], ()-> SimplyThread
 	else
-		window.SimplyThread = SimplyThread
+		@SimplyThread = SimplyThread

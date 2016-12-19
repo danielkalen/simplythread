@@ -728,6 +728,6 @@ var slice = [].slice;
       return SimplyThread;
     });
   } else {
-    return window.SimplyThread = SimplyThread;
+    return this.SimplyThread = SimplyThread;
   }
 })();
