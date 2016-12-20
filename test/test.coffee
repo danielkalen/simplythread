@@ -6,6 +6,7 @@ should = chai.should()
 basePath = location.origin + location.pathname.replace /\/[^\/]+$/, ''
 basePath = basePath.replace /\/test$/, ''
 basePath += '/base' if window.isKarma or window.isSauce
+isLocalEnv = window.location.protocol is 'file:'
 Promise.config warnings:false
 
 if __coverage__?
@@ -21,8 +22,8 @@ FN =
 	delayedPromise: (a, b)-> new Promise (resolve)-> setTimeout (()->resolve(a+b)), 150*Math.random()
 	context: (num)-> @prop+num
 	contextReturn: ()-> @
-	globals: (propName)-> @[propName]
-	globalsInvoker: (propName, arg)-> @[propName](arg)
+	globals: (propName)-> eval(propName)
+	globalsInvoker: (propName, arg)-> eval(propName)(arg)
 	invoker: (a, b)-> a(b)
 	emitter: ()->
 		threadEmit('someEvent', 'first')
@@ -43,7 +44,7 @@ suite "SimplyThread", ()->
 		test "will create a new thread with a given function", ()->
 			adderThread = SimplyThread.create FN.adder
 
-			adderThread.should.have.keys 'fn', 'fnString', 'status'
+			adderThread.should.have.any.keys 'fn', 'status', 'fnString', 'worker', 'socket'
 			adderThread.fn.should.equal FN.adder
 			adderThread.status.should.equal 'active'
 			adderThread.kill()
@@ -53,7 +54,7 @@ suite "SimplyThread", ()->
 		test "will create a new thread without a function", ()->
 			emptyThread = SimplyThread.create()
 			
-			emptyThread.should.have.keys 'fn', 'fnString', 'status'
+			emptyThread.should.have.any.keys 'fn', 'fnString', 'status'
 			should.not.exist(emptyThread.fn)
 			emptyThread.kill()
 
@@ -145,7 +146,7 @@ suite "SimplyThread", ()->
 
 
 			test "if an error occured in the thread then an error of the same type will be thrown on the main thread (via promise reject)", ()->
-				errThread = SimplyThread.create ()-> throw new Error('sample error')
+				window.errThread = SimplyThread.create ()-> throw new Error('sample error')
 				errThread.run().catch (err)->
 					err.should.be.an 'error'
 					err.constructor.should.equal Error
@@ -292,6 +293,20 @@ suite "SimplyThread", ()->
 					.setGlobals {'someFn': (string)-> string.toUpperCase()}
 					.run('someFn', 'simplythread').then (result)->
 						result.should.equal 'SIMPLYTHREAD'
+
+
+			test "will only accept an argument of type object (and not null)", ()->
+				expect ()-> globalsThread.setGlobals()
+					.to.throw()
+				
+				expect ()-> globalsThread.setGlobals(null)
+					.to.throw()
+				
+				expect ()-> globalsThread.setGlobals(()->)
+					.to.throw()
+				
+				expect ()-> globalsThread.setGlobals({})
+					.not.to.throw()
 	
 
 
@@ -299,14 +314,14 @@ suite "SimplyThread", ()->
 
 		# ==== Set External Scripts =================================================================================
 		suite ".setScripts()", ()->
-			test "will take an array of strings that act as network paths for external scripts and loads them inside the thread's global scope", ()->				
+			test "will take an array of strings that act as network paths for external scripts and loads them inside the thread's global scope", ()-> if isLocalEnv then @skip() else
 				globalsThread
 					.setScripts ["#{basePath}/test/samplescript.js"]
 					.run('sampleScriptName').then (result)->
 						result.should.equal 'just a sample script'
 			
 
-			test "will load an external script when provided in a non-array format value", ()->				
+			test "will load an external script when provided in a non-array format value", ()-> if isLocalEnv then @skip() else
 				globalsThread
 					.setScripts "#{basePath}/test/samplescript.js"
 					.run('sampleScriptName')
@@ -316,7 +331,7 @@ suite "SimplyThread", ()->
 							console.log err
 			
 
-			test "will reject .run() calls' promises if failed to load any of the provided scripts", ()->				
+			test "will reject .run() calls' promises if failed to load any of the provided scripts", ()-> if isLocalEnv then @skip() else
 				globalsThread
 					.setScripts ["#{basePath}/test/samplescript.js", "#{basePath}/test/nonexistent.js"]
 					.run('sampleScriptName')
@@ -327,7 +342,7 @@ suite "SimplyThread", ()->
 							err.should.be.an.error
 			
 
-			test "can load an NPM module when given a module's name with a 'MODULE:' prefix", ()-> if window.location.protocol is 'file:' then @skip() else
+			test "can load an NPM module when given a module's name with a 'MODULE:' prefix", ()-> if isLocalEnv then @skip() else
 				SimplyThread
 					.create (arr)-> lodash.join(arr, '~')
 					.setScripts "MODULE:lodash"
@@ -335,7 +350,7 @@ suite "SimplyThread", ()->
 						result.should.equal 'a~b~c'
 			
 
-			test "can load an NPM module and expose it under a different name using 'MODULE:xyz#custonName'", ()-> if window.location.protocol is 'file:' then @skip() else
+			test "can load an NPM module and expose it under a different name using 'MODULE:xyz#custonName'", ()-> if isLocalEnv then @skip() else
 				SimplyThread
 					.create (timeFrame)-> TimeUNITS[timeFrame]*3
 					.setScripts "MODULE:timeunits#TimeUNITS"
@@ -416,9 +431,9 @@ suite "SimplyThread", ()->
 						should.exist result.subA.DOM$
 						should.exist result.subB.DOM$
 						should.exist result.subC.DOM$
-						should.not.exist result.subA.DOM
-						should.not.exist result.subB.DOM
-						should.not.exist result.subC.DOM
+						should.not.exist result.subA.DOM if SimplyThread.SUPPORTS.workers
+						should.not.exist result.subB.DOM if SimplyThread.SUPPORTS.workers
+						should.not.exist result.subC.DOM if SimplyThread.SUPPORTS.workers
 
 						result.self.should.equal(result)
 						result.subA.parent.should.equal(result)

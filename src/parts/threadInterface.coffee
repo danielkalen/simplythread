@@ -2,24 +2,37 @@
 ## Thread Public Interface
 ## ========================================================================== 
 ThreadInterface = (@fn)->
-	@fnString = @fn?.toString()
 	@status = 'active'
-	thread = new Thread(@fn, @fnString)
-	
-	Object.defineProperty @, 'thread',
-		'enumerable': false
-		'configurable': false
-		'get': ()-> thread
+	@worker = do ()=>
+		### istanbul ignore if ###
+		if not SUPPORTS.workers
+			return new FakeWorker()
+		else
+			return helpers.patchWorkerMethods(new Worker helpers.createWorkerURI())
 
+	@socket = do ()=>
+		@worker.addEventListener 'message', (data)=>
+			if data.ID and @socket.callbacks[data.ID] # data.ID will be a string if it's an event ID, otherwise it'll be a number
+				@socket.callbacks[data.ID](data)
+
+		return {
+			on: (ID, callback)-> @callbacks[ID] = callback
+			callbacks: {}
+		}
+
+	@setFn(@fn) if @fn
 	return @
 
 
 # ==== Prototype =================================================================================
 ThreadInterface::run = (args...)->
 	if typeof @fn is 'function'
-		@thread.sendCommand('run', @_stringifyPayload(args))
-			.then (payload)=> @_parsePayload(payload)
-			.catch (rejection)=> Promise.reject @_parseRejection(rejection)
+		new Promise (resolve, reject)=>
+			@socket.on ID=helpers.genTransactionID(), (data)=> switch data.status
+				when 'resolve' then resolve(data.payload)
+				when 'reject' then reject(data.payload)
+			
+			@worker.postMessage command:'run', payload:args, ID:ID
 	else
 		Promise.reject new Error('No function was set for this thread.')
 
@@ -28,8 +41,7 @@ ThreadInterface::on = (event, callback)->
 	if typeof callback isnt 'function'
 		throw new Error("Provided callback isn't a function")
 	else
-		@thread.socket.on event, (message)=>
-			callback @_parsePayload(message.payload)
+		@socket.on event, (data)-> callback(data.payload)
 
 
 ThreadInterface::setFn = (fn, context)->
@@ -39,59 +51,35 @@ ThreadInterface::setFn = (fn, context)->
 		@fn = fn
 		@fnString = fn.toString()
 		
-		@thread.sendCommand('setFn', @fnString)
-		@setContext(context) if context
-	
+		@worker.postMessage {command:'setFn', payload:@fnString}, false
+		@setContext(context) if context?
 		return @
 
 
-ThreadInterface::setGlobals = (obj)->		
-	@thread.sendCommand('setGlobals', @_stringifyPayload(obj))
+ThreadInterface::setGlobals = (obj)->
+	if not obj or typeof obj isnt 'object'
+		throw new Error("Provided argument isn't an object")
+	else
+		@worker.postMessage command:'setGlobals', payload:obj
 	return @
 
 
 ThreadInterface::setScripts = (scripts)->
-	@thread.sendCommand('setScripts', @_stringifyPayload([].concat scripts))
+	@worker.postMessage command:'setScripts', payload:[].concat(scripts)
 	return @
 
 
 ThreadInterface::setContext = (context)->
-	@thread.sendCommand('setContext', @_stringifyPayload(context))
+	@worker.postMessage command:'setContext', payload:context
 	return @
 
 
 ThreadInterface::kill = ()->
-	### istanbul ignore next ###
-	@thread.worker.terminate() if @thread.worker
+	@worker.terminate()
 	@status = 'dead'
 
 	SimplyThread.remove(@)
 	return @
-
-
-ThreadInterface::_stringifyPayload = (payload)->
-	output = type: typeof payload
-	output.data = @javascriptStringify(payload, null, null, STRINGIFY_OPTS)
-	return output
-
-
-ThreadInterface::_parsePayload = (payload)->
-	if PRIMITIVE_TYPES[payload.type]
-		return payload.data
-	else
-		return eval "(#{payload.data})"
-
-
-ThreadInterface::_parseRejection = (rejection)->
-	err = @_parsePayload(rejection)
-	if err and typeof err is 'object' and window[err.name] and window[err.name].constructor is Function
-		proxyErr = new window[err.name](err.message)
-		proxyErr.stack = err.stack
-		return proxyErr
-	else
-		return err
-
-exposeStringifyFn.call ThreadInterface::
 
 
 

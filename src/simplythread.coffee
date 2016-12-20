@@ -26,11 +26,11 @@ do ()->
 
 
 
+	import parts/threadInterface
+	import parts/worker
+	import parts/fakeWorker
 	import parts/helpers
 	import parts/promise-polyfill
-	import parts/threadInterface
-	import parts/thread
-	import parts/worker
 	SimplyThread.version = import ../.config/.version
 
 	### istanbul ignore next ###
