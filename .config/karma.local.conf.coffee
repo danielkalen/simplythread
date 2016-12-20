@@ -31,6 +31,7 @@ module.exports = (config)-> config.set
 	coverageReporter:
 		type: 'lcov'
 		dir: './coverage/'
+		subdir: '.'
 
 	port: 9876
 	colors: true

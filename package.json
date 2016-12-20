@@ -10,6 +10,7 @@
     "chai": "^3.5.0",
     "closure-compiler-service": "^0.6.1",
     "coffee-script": "^1.10.0",
+    "create-output-stream": "0.0.1",
     "foreach-cli": "^1.6.1",
     "forever": "^0.15.1",
     "http-server": "^0.9.0",
@@ -27,10 +28,12 @@
     "karma-phantomjs-launcher": "^1.0.2",
     "karma-safari-launcher": "^1.0.0",
     "karma-sauce-launcher": "^1.1.0",
+    "lcov-parse": "0.0.10",
     "mocha": "^2.5.3",
     "phantomjs-prebuilt": "^2.1.14",
     "simplyimport": "^2.3.4",
     "simplywatch": "^2.3.2",
+    "svg2png": "^4.1.1",
     "uglify-js": "^2.6.2"
   },
   "scripts": {
@@ -50,7 +53,9 @@
     "watch:test": "simplywatch -g 'test/test.coffee' -x 'npm run compile:test -s'",
     "measure": "npm run measure:pretty -s && npm run measure:minified -s",
     "measure:pretty": "echo 'Standard:' && gzipped dist/simplythread.pretty.js",
-    "measure:minified": "echo 'Standard Minfied:' && gzipped dist/simplythread.js"
+    "measure:minified": "echo 'Standard Minfied:' && gzipped dist/simplythread.js",
+    "coverage": "npm run test:phantom && npm run coverage:badge",
+    "coverage:badge": "coffee .config/badge-gen.coffee"
   },
   "repository": {
     "type": "git",
