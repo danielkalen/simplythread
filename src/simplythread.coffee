@@ -35,6 +35,7 @@ do ()->
 	import parts/worker
 	SimplyThread.version = import ../.config/.version
 
+	`/* istanbul ignore next */`
 	if exports?.module?
 		module.exports = SimplyThread
 	else if typeof define is 'function' and define.amd

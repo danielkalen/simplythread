@@ -48,6 +48,7 @@ var slice = [].slice;
   genTransactionID = function() {
     return ++currentID;
   };
+  /* istanbul ignore next */;
   exposeStringifyFn = function() {
     (function (root, stringify) {
 		  
@@ -474,6 +475,7 @@ var slice = [].slice;
     return this;
   };
   Thread.prototype.init = function() {
+    /* istanbul ignore next */;
     if (!SUPPORTS.workers) {
       return false;
     } else {
@@ -533,6 +535,7 @@ var slice = [].slice;
             ID: ID
           });
         } else {
+          /* istanbul ignore next */;
           switch (command) {
             case 'run':
               if (_this.fn) {
@@ -551,10 +554,12 @@ var slice = [].slice;
       };
     })(this));
   };
+  /* istanbul ignore next */;
   threadEmit = function(event, payload) {
     var base;
     return typeof (base = this.socket.callbacks)[event] === "function" ? base[event](payload) : void 0;
   };
+  /* istanbul ignore next */;
   workerScript = function() {
     var _fetchExternal, _fetchModule, _parsePayload, _stringifyError, _stringifyPayload, fnContext, fnToExecute, onmessage, run, scriptsLoaded, setGlobals, setScripts;
     fnToExecute = null;
@@ -722,6 +727,7 @@ var slice = [].slice;
     };
   };
   SimplyThread.version = '1.7.0';
+  /* istanbul ignore next */;
   if ((typeof exports !== "undefined" && exports !== null ? exports.module : void 0) != null) {
     return module.exports = SimplyThread;
   } else if (typeof define === 'function' && define.amd) {

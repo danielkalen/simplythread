@@ -11,6 +11,7 @@ Thread = (@fn, @fnString)->
 
 # ==== Prototype =================================================================================
 Thread::init = ()->
+	`/* istanbul ignore next */`
 	if not SUPPORTS.workers
 		return false
 	else
@@ -57,6 +58,7 @@ Thread::sendCommand = (command, payload)-> new Promise (resolve, reject)=>
 
 
 	else # Fallback
+		`/* istanbul ignore next */`
 		switch command
 			when 'run'
 				@fn.apply(@context, payload) if @fn
@@ -69,6 +71,7 @@ Thread::sendCommand = (command, payload)-> new Promise (resolve, reject)=>
 
 
 
+`/* istanbul ignore next */`
 threadEmit = (event, payload)-> # Fallback threadEmit function for env not supporting threads/workers
 	@socket.callbacks[event]?(payload)
 
