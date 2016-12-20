@@ -483,7 +483,8 @@ var slice = [].slice;
   Thread.prototype.createURI = function() {
     var blob, dependencies, workerScriptContents;
     workerScriptContents = workerScript.toString().match(functionBodyRegEx)[1];
-    dependencies = exposeStringifyFn.toString().match(functionBodyRegEx)[1];
+    dependencies = SimplyThread.threadDeps || '';
+    dependencies += exposeStringifyFn.toString().match(functionBodyRegEx)[1];
     dependencies += "var PRIMITIVE_TYPES = " + (JSON.stringify(PRIMITIVE_TYPES)) + ";";
     dependencies += "var STRINGIFY_OPTS = " + (JSON.stringify(STRINGIFY_OPTS)) + ";";
     if (!SUPPORTS.promises) {

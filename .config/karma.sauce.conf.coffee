@@ -91,7 +91,7 @@ module.exports = (config)-> config.set
 		'**/*.git'
 	]
 
-	# preprocessors: 'dist/simplythread.pretty.js': 'coverage'
+	preprocessors: 'dist/simplythread.pretty.js': 'coverage'
 	
 	reporters: ['mocha', 'coverage', 'saucelabs']
 

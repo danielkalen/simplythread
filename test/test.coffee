@@ -8,6 +8,10 @@ basePath = basePath.replace /\/test$/, ''
 basePath += '/base' if window.isKarma or window.isSauce
 Promise.config warnings:false
 
+if __coverage__?
+	coverageVar = Object.keys(window).filter((varKey)-> varKey.slice(0,6) is '__cov_')[0]
+	coverageObj = __coverage__[Object.keys(__coverage__)[0]]
+	SimplyThread.threadDeps = "var #{coverageVar} = #{JSON.stringify(coverageObj)};"
 
 FN =
 	err: ()-> throw new Error('sample error')
