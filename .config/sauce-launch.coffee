@@ -7,7 +7,7 @@ request
 			name: "SimplyThread Test Suite"
 			build: require('../package.json').version
 			framework: "mocha"
-			url: "http://simplythread.dev:9201/test/testrunner.html"
+			url: "http://simplythread.dev:9201/test/testrunner.html?purgeCache=#{Math.random()*100000000}"
 			platforms: [
 				["OS X 10.11", "chrome", "53"]
 				["OS X 10.11", "chrome", "40"]
