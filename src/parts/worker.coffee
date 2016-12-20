@@ -3,9 +3,9 @@
 ## ========================================================================== 
 ### istanbul ignore next ###
 workerScript = ()->
-	fnToExecute = null
-	fnContext = null
-	scriptsLoaded = Promise.resolve()
+	_fnToExecute = null
+	_fnContext = null
+	_scriptsLoaded = Promise.resolve()
 
 	_stringifyPayload = (payload)->
 		output = type: typeof payload
@@ -54,19 +54,19 @@ workerScript = ()->
 		ID = e.data.ID
 		
 		switch command
-			when 'setGlobals' then setGlobals(_parsePayload payload)
-			when 'setScripts' then setScripts(_parsePayload payload)
-			when 'setContext' then fnContext = _parsePayload payload
-			when 'setFn' then fnToExecute = eval "(#{payload})"
-			when 'run' then run(ID, _parsePayload payload)
+			when 'setGlobals' then _setGlobals(_parsePayload payload)
+			when 'setScripts' then _setScripts(_parsePayload payload)
+			when 'setContext' then _fnContext = _parsePayload payload
+			when 'setFn' then _fnToExecute = eval "(#{payload})"
+			when 'run' then _run(ID, _parsePayload payload)
 	
 
-	setGlobals = (obj)->
+	_setGlobals = (obj)->
 		for key,value of obj
 			self[key] = value
 		return
 	
-	setScripts = (scripts)-> scriptsLoaded = new Promise (finalResolve, finalReject)->
+	_setScripts = (scripts)-> _scriptsLoaded = new Promise (finalResolve, finalReject)->
 		completedScripts = 0
 		
 		for script in scripts
@@ -92,11 +92,11 @@ workerScript = ()->
 		return
 
 
-	run = (ID, args=[])->
-		scriptsLoaded
+	_run = (ID, args=[])->
+		_scriptsLoaded
 			.then ()->
 				try
-					result = fnToExecute.apply(fnContext, args)
+					result = _fnToExecute.apply(_fnContext, args)
 				catch err
 					postMessage {ID, status:'reject', payload:_stringifyError(err)}
 					hasError = true

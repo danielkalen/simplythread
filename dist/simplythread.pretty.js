@@ -578,10 +578,10 @@ var slice = [].slice;
 
   /* istanbul ignore next */
   workerScript = function() {
-    var _fetchExternal, _fetchModule, _parsePayload, _stringifyError, _stringifyPayload, fnContext, fnToExecute, onmessage, run, scriptsLoaded, setGlobals, setScripts;
-    fnToExecute = null;
-    fnContext = null;
-    scriptsLoaded = Promise.resolve();
+    var _fetchExternal, _fetchModule, _fnContext, _fnToExecute, _parsePayload, _run, _scriptsLoaded, _setGlobals, _setScripts, _stringifyError, _stringifyPayload, onmessage;
+    _fnToExecute = null;
+    _fnContext = null;
+    _scriptsLoaded = Promise.resolve();
     _stringifyPayload = function(payload) {
       var output;
       output = {
@@ -647,26 +647,26 @@ var slice = [].slice;
       ID = e.data.ID;
       switch (command) {
         case 'setGlobals':
-          return setGlobals(_parsePayload(payload));
+          return _setGlobals(_parsePayload(payload));
         case 'setScripts':
-          return setScripts(_parsePayload(payload));
+          return _setScripts(_parsePayload(payload));
         case 'setContext':
-          return fnContext = _parsePayload(payload);
+          return _fnContext = _parsePayload(payload);
         case 'setFn':
-          return fnToExecute = eval("(" + payload + ")");
+          return _fnToExecute = eval("(" + payload + ")");
         case 'run':
-          return run(ID, _parsePayload(payload));
+          return _run(ID, _parsePayload(payload));
       }
     };
-    setGlobals = function(obj) {
+    _setGlobals = function(obj) {
       var key, value;
       for (key in obj) {
         value = obj[key];
         self[key] = value;
       }
     };
-    setScripts = function(scripts) {
-      return scriptsLoaded = new Promise(function(finalResolve, finalReject) {
+    _setScripts = function(scripts) {
+      return _scriptsLoaded = new Promise(function(finalResolve, finalReject) {
         var completedScripts, i, len, script, scriptPromise;
         completedScripts = 0;
         for (i = 0, len = scripts.length; i < len; i++) {
@@ -700,14 +700,14 @@ var slice = [].slice;
         }
       });
     };
-    run = function(ID, args) {
+    _run = function(ID, args) {
       if (args == null) {
         args = [];
       }
-      return scriptsLoaded.then(function() {
+      return _scriptsLoaded.then(function() {
         var err, error, hasError, result;
         try {
-          result = fnToExecute.apply(fnContext, args);
+          result = _fnToExecute.apply(_fnContext, args);
         } catch (error) {
           err = error;
           postMessage({
