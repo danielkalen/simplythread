@@ -2,7 +2,7 @@
   "name": "simplythread",
   "version": "2.0.0",
   "description": "JS Threads: Run arbitrary functions in immediatly-spawned browser threads with an async workflow",
-  "main": "app.coffee",
+  "main": "dist/simplythread.pretty.js",
   "dependencies": {
     "javascript-stringify-plus": "^1.6.0"
   },
