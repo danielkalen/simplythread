@@ -1,6 +1,7 @@
 # SimplyThread
 [![Build Status](https://travis-ci.org/danielkalen/simplythread.svg?branch=master)](https://travis-ci.org/danielkalen/simplythread)
 [![Coverage](.config/badges/coverage.png?raw=true)](https://github.com/danielkalen/simplythread)
+[![Code Climate](https://codeclimate.com/github/danielkalen/simplythread/badges/gpa.svg)](https://codeclimate.com/github/danielkalen/simplythread)
 
 Execute arbitrary functions in immediatly-spawned browser threads with an async Promise workflow. Relies on worker technology for threads and uses fallback methods for unsupported browsers.
 
