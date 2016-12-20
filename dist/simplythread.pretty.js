@@ -640,24 +640,6 @@ var slice = [].slice;
         }
       });
     };
-    onmessage = function(e) {
-      var ID, command, payload;
-      command = e.data.command;
-      payload = e.data.payload;
-      ID = e.data.ID;
-      switch (command) {
-        case 'setGlobals':
-          return _setGlobals(_parsePayload(payload));
-        case 'setScripts':
-          return _setScripts(_parsePayload(payload));
-        case 'setContext':
-          return _fnContext = _parsePayload(payload);
-        case 'setFn':
-          return _fnToExecute = eval("(" + payload + ")");
-        case 'run':
-          return _run(ID, _parsePayload(payload));
-      }
-    };
     _setGlobals = function(obj) {
       var key, value;
       for (key in obj) {
@@ -745,6 +727,24 @@ var slice = [].slice;
         ID: event,
         payload: _stringifyPayload(payload)
       });
+    };
+    onmessage = function(e) {
+      var ID, command, payload;
+      command = e.data.command;
+      payload = e.data.payload;
+      ID = e.data.ID;
+      switch (command) {
+        case 'setGlobals':
+          return _setGlobals(_parsePayload(payload));
+        case 'setScripts':
+          return _setScripts(_parsePayload(payload));
+        case 'setContext':
+          return _fnContext = _parsePayload(payload);
+        case 'setFn':
+          return _fnToExecute = eval("(" + payload + ")");
+        case 'run':
+          return _run(ID, _parsePayload(payload));
+      }
     };
   };
   SimplyThread.version = '1.7.0';

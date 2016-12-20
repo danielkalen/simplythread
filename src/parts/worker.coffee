@@ -46,19 +46,6 @@ workerScript = ()->
 		_fetchExternal("https://wzrd.in/bundle/#{moduleName}").then (result)-> if result
 			loader = eval(result)
 			self[moduleLabel] = loader(moduleName)
-
-
-	onmessage = (e)->
-		command = e.data.command
-		payload = e.data.payload
-		ID = e.data.ID
-		
-		switch command
-			when 'setGlobals' then _setGlobals(_parsePayload payload)
-			when 'setScripts' then _setScripts(_parsePayload payload)
-			when 'setContext' then _fnContext = _parsePayload payload
-			when 'setFn' then _fnToExecute = eval "(#{payload})"
-			when 'run' then _run(ID, _parsePayload payload)
 	
 
 	_setGlobals = (obj)->
@@ -113,6 +100,19 @@ workerScript = ()->
 
 	threadEmit = (event, payload)->
 		postMessage {ID:event, payload:_stringifyPayload(payload)}
+
+
+	onmessage = (e)->
+		command = e.data.command
+		payload = e.data.payload
+		ID = e.data.ID
+		
+		switch command
+			when 'setGlobals' then _setGlobals(_parsePayload payload)
+			when 'setScripts' then _setScripts(_parsePayload payload)
+			when 'setContext' then _fnContext = _parsePayload payload
+			when 'setFn' then _fnToExecute = eval "(#{payload})"
+			when 'run' then _run(ID, _parsePayload payload)
 
 
 
