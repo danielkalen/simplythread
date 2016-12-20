@@ -14,7 +14,6 @@ if __coverage__?
 	SimplyThread.threadDeps = "var #{coverageVar} = #{JSON.stringify(coverageObj)};"
 
 FN =
-	err: ()-> throw new Error('sample error')
 	subtracter: (a, b)-> a-b
 	adder: (a, b)-> a+b
 	adderPromise: (a, b)-> new Promise (resolve)-> resolve(a+b)
@@ -88,10 +87,9 @@ suite "SimplyThread", ()->
 
 
 	suite "Thread", ()->
-		emptyThread = errThread = adderThread = adderPromiseThread = adderPromiseFailThread = delayedPromiseThread = subtracterThread = contextThread = contextReturnThread = globalsThread = globalsInvokerThread = invokerThread  = emitterThread = null
+		emptyThread = adderThread = adderPromiseThread = adderPromiseFailThread = delayedPromiseThread = subtracterThread = contextThread = contextReturnThread = globalsThread = globalsInvokerThread = invokerThread  = emitterThread = null
 		suiteSetup ()->
 			emptyThread = SimplyThread.create()
-			errThread = SimplyThread.create FN.err
 			adderThread = SimplyThread.create FN.adder
 			adderPromiseThread = SimplyThread.create FN.adderPromise
 			adderPromiseFailThread = SimplyThread.create FN.adderPromiseFail
@@ -140,8 +138,31 @@ suite "SimplyThread", ()->
 
 
 			test "if an error occured in the thread the run promise should be rejected", ()->
+				errThread = SimplyThread.create ()-> throw new Error('sample error')
 				errThread.run().catch (err)->
 					err.should.be.an 'error'
+					errThread.kill()
+
+
+			test "if an error occured in the thread then an error of the same type will be thrown on the main thread (via promise reject)", ()->
+				errThread = SimplyThread.create ()-> throw new Error('sample error')
+				errThread.run().catch (err)->
+					err.should.be.an 'error'
+					err.constructor.should.equal Error
+
+					errThread
+						.setFn ()-> someUndefinedVariable
+						.run().catch (err)->
+							err.should.be.an 'error'
+							err.constructor.should.equal ReferenceError
+
+							errThread
+								.setFn ()-> throw 'Non error object'
+								.run().catch (err)->
+									err.should.not.be.an 'error'
+									err.constructor.should.equal String
+							
+									errThread.kill()
 
 			
 			test "will return a rejected promise if the given function returned a rejected promise", ()->
@@ -170,6 +191,15 @@ suite "SimplyThread", ()->
 					result('simplythread').should.equal 'SIMPLYTHREAD'
 
 
+			test "invoking postMessage() from inside the thread should not cause any errors in the library", ()->
+				menaceThread = SimplyThread.create ()-> postMessage("I'm a menace"); "I'm a menace"
+				expect(()->
+					menaceThread.run().then (result)->
+						result.should.be.a.string
+						menaceThread.kill()
+				).not.to.throw()
+
+
 
 
 
@@ -187,6 +217,14 @@ suite "SimplyThread", ()->
 						emitCount.diffEvent.should.equal 2
 						resolve()
 					, 75
+			
+
+			test "Will throw an error if the second argument isn't a function", ()->
+				expect ()-> emitterThread.on 'someEvent'
+					.to.throw()
+				
+				expect ()-> emitterThread.on 'someEvent', {}
+					.to.throw()
 
 
 
@@ -222,6 +260,17 @@ suite "SimplyThread", ()->
 						result.should.be.an 'object'
 						result.should.have.keys 'prop'
 						result.prop.should.equal 5
+			
+
+			test "Will throw an error if the provided argument isn't a function", ()->
+				expect ()-> adderThread.setFn 'someEvent'
+					.to.throw()
+				
+				expect ()-> adderThread.setFn {}
+					.to.throw()
+				
+				expect ()-> adderThread.setFn()
+					.to.throw()
 
 	
 

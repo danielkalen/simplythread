@@ -1,7 +1,7 @@
 ## ==========================================================================
 ## Worker script
 ## ========================================================================== 
-`/* istanbul ignore next */`
+### istanbul ignore next ###
 workerScript = ()->
 	fnToExecute = null
 	fnContext = null
@@ -13,7 +13,10 @@ workerScript = ()->
 		return output
 
 	_stringifyError = ({name, message, stack})->
-		_stringifyPayload {name, message, stack}
+		if name
+			_stringifyPayload {name, message, stack}
+		else
+			_stringifyPayload arguments[0]
 
 	_parsePayload = (payload)->
 		if PRIMITIVE_TYPES[payload.type]

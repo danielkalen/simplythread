@@ -24,20 +24,25 @@ ThreadInterface::run = (args...)->
 		Promise.reject new Error('No function was set for this thread.')
 
 
-ThreadInterface::on = (event, callback)-> if typeof event is 'string' and typeof callback is 'function'
-	@thread.socket.on event, (message)=>
-		callback @_parsePayload(message.payload)
+ThreadInterface::on = (event, callback)->
+	if typeof callback isnt 'function'
+		throw new Error("Provided callback isn't a function")
+	else
+		@thread.socket.on event, (message)=>
+			callback @_parsePayload(message.payload)
 
 
 ThreadInterface::setFn = (fn, context)->
-	if typeof fn is 'function'
+	if typeof fn isnt 'function'
+		throw new Error("Provided argument isn't a function")
+	else
 		@fn = fn
 		@fnString = fn.toString()
 		
 		@thread.sendCommand('setFn', @fnString)
 		@setContext(context) if context
 	
-	return @
+		return @
 
 
 ThreadInterface::setGlobals = (obj)->		
@@ -56,7 +61,8 @@ ThreadInterface::setContext = (context)->
 
 
 ThreadInterface::kill = ()->
-	@thread?.worker.terminate()
+	### istanbul ignore next ###
+	@thread.worker.terminate() if @thread.worker
 	@status = 'dead'
 
 	SimplyThread.remove(@)
@@ -65,7 +71,7 @@ ThreadInterface::kill = ()->
 
 ThreadInterface::_stringifyPayload = (payload)->
 	output = type: typeof payload
-	output.data = if PRIMITIVE_TYPES[output.type] then payload else @javascriptStringify(payload, null, null, STRINGIFY_OPTS)
+	output.data = @javascriptStringify(payload, null, null, STRINGIFY_OPTS)
 	return output
 
 
@@ -79,7 +85,7 @@ ThreadInterface::_parsePayload = (payload)->
 ThreadInterface::_parseRejection = (rejection)->
 	err = @_parsePayload(rejection)
 	if err and typeof err is 'object' and window[err.name] and window[err.name].constructor is Function
-		proxyErr = if err.name and window[err.name] then new window[err.name](err.message) else new Error(err.message)
+		proxyErr = new window[err.name](err.message)
 		proxyErr.stack = err.stack
 		return proxyErr
 	else

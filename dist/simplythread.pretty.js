@@ -15,9 +15,7 @@ var slice = [].slice;
     this.remove = function(threadInstance) {
       var threadIndex;
       threadIndex = threads.indexOf(threadInstance);
-      if (threadIndex !== -1) {
-        return threads.splice(threadIndex, 1);
-      }
+      return threads.splice(threadIndex, 1);
     };
     this.list = function() {
       return threads.slice();
@@ -48,7 +46,8 @@ var slice = [].slice;
   genTransactionID = function() {
     return ++currentID;
   };
-  /* istanbul ignore next */;
+
+  /* istanbul ignore next */
   exposeStringifyFn = function() {
     (function (root, stringify) {
 		  
@@ -397,7 +396,9 @@ var slice = [].slice;
     }
   };
   ThreadInterface.prototype.on = function(event, callback) {
-    if (typeof event === 'string' && typeof callback === 'function') {
+    if (typeof callback !== 'function') {
+      throw new Error("Provided callback isn't a function");
+    } else {
       return this.thread.socket.on(event, (function(_this) {
         return function(message) {
           return callback(_this._parsePayload(message.payload));
@@ -406,15 +407,17 @@ var slice = [].slice;
     }
   };
   ThreadInterface.prototype.setFn = function(fn, context) {
-    if (typeof fn === 'function') {
+    if (typeof fn !== 'function') {
+      throw new Error("Provided argument isn't a function");
+    } else {
       this.fn = fn;
       this.fnString = fn.toString();
       this.thread.sendCommand('setFn', this.fnString);
       if (context) {
         this.setContext(context);
       }
+      return this;
     }
-    return this;
   };
   ThreadInterface.prototype.setGlobals = function(obj) {
     this.thread.sendCommand('setGlobals', this._stringifyPayload(obj));
@@ -429,9 +432,10 @@ var slice = [].slice;
     return this;
   };
   ThreadInterface.prototype.kill = function() {
-    var ref;
-    if ((ref = this.thread) != null) {
-      ref.worker.terminate();
+
+    /* istanbul ignore next */
+    if (this.thread.worker) {
+      this.thread.worker.terminate();
     }
     this.status = 'dead';
     SimplyThread.remove(this);
@@ -442,7 +446,7 @@ var slice = [].slice;
     output = {
       type: typeof payload
     };
-    output.data = PRIMITIVE_TYPES[output.type] ? payload : this.javascriptStringify(payload, null, null, STRINGIFY_OPTS);
+    output.data = this.javascriptStringify(payload, null, null, STRINGIFY_OPTS);
     return output;
   };
   ThreadInterface.prototype._parsePayload = function(payload) {
@@ -456,7 +460,7 @@ var slice = [].slice;
     var err, proxyErr;
     err = this._parsePayload(rejection);
     if (err && typeof err === 'object' && window[err.name] && window[err.name].constructor === Function) {
-      proxyErr = err.name && window[err.name] ? new window[err.name](err.message) : new Error(err.message);
+      proxyErr = new window[err.name](err.message);
       proxyErr.stack = err.stack;
       return proxyErr;
     } else {
@@ -475,7 +479,8 @@ var slice = [].slice;
     return this;
   };
   Thread.prototype.init = function() {
-    /* istanbul ignore next */;
+
+    /* istanbul ignore next */
     if (!SUPPORTS.workers) {
       return false;
     } else {
@@ -485,10 +490,14 @@ var slice = [].slice;
   Thread.prototype.createURI = function() {
     var blob, dependencies, workerScriptContents;
     workerScriptContents = workerScript.toString().match(functionBodyRegEx)[1];
+
+    /* istanbul ignore next */
     dependencies = SimplyThread.threadDeps || '';
     dependencies += exposeStringifyFn.toString().match(functionBodyRegEx)[1];
     dependencies += "var PRIMITIVE_TYPES = " + (JSON.stringify(PRIMITIVE_TYPES)) + ";";
     dependencies += "var STRINGIFY_OPTS = " + (JSON.stringify(STRINGIFY_OPTS)) + ";";
+
+    /* istanbul ignore next */
     if (!SUPPORTS.promises) {
       dependencies += promisePolyfill;
     }
@@ -498,6 +507,8 @@ var slice = [].slice;
     return URL.createObjectURL(blob);
   };
   Thread.prototype.openSocket = function() {
+
+    /* istanbul ignore else */
     if (this.worker) {
       this.worker.addEventListener('message', (function(_this) {
         return function(e) {
@@ -518,6 +529,9 @@ var slice = [].slice;
     return new Promise((function(_this) {
       return function(resolve, reject) {
         var ID;
+        ID = null;
+
+        /* istanbul ignore else */
         if (_this.worker) {
           if (command === 'run') {
             _this.socket.on(ID = genTransactionID(), function(data) {
@@ -535,7 +549,8 @@ var slice = [].slice;
             ID: ID
           });
         } else {
-          /* istanbul ignore next */;
+
+          /* istanbul ignore next */
           switch (command) {
             case 'run':
               if (_this.fn) {
@@ -554,12 +569,14 @@ var slice = [].slice;
       };
     })(this));
   };
-  /* istanbul ignore next */;
+
+  /* istanbul ignore next */
   threadEmit = function(event, payload) {
     var base;
     return typeof (base = this.socket.callbacks)[event] === "function" ? base[event](payload) : void 0;
   };
-  /* istanbul ignore next */;
+
+  /* istanbul ignore next */
   workerScript = function() {
     var _fetchExternal, _fetchModule, _parsePayload, _stringifyError, _stringifyPayload, fnContext, fnToExecute, onmessage, run, scriptsLoaded, setGlobals, setScripts;
     fnToExecute = null;
@@ -576,11 +593,15 @@ var slice = [].slice;
     _stringifyError = function(arg) {
       var message, name, stack;
       name = arg.name, message = arg.message, stack = arg.stack;
-      return _stringifyPayload({
-        name: name,
-        message: message,
-        stack: stack
-      });
+      if (name) {
+        return _stringifyPayload({
+          name: name,
+          message: message,
+          stack: stack
+        });
+      } else {
+        return _stringifyPayload(arguments[0]);
+      }
     };
     _parsePayload = function(payload) {
       if (PRIMITIVE_TYPES[payload.type]) {
@@ -727,7 +748,8 @@ var slice = [].slice;
     };
   };
   SimplyThread.version = '1.7.0';
-  /* istanbul ignore next */;
+
+  /* istanbul ignore next */
   if ((typeof exports !== "undefined" && exports !== null ? exports.module : void 0) != null) {
     return module.exports = SimplyThread;
   } else if (typeof define === 'function' && define.amd) {

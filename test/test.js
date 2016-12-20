@@ -32,9 +32,6 @@ if (typeof __coverage__ !== "undefined" && __coverage__ !== null) {
 }
 
 FN = {
-  err: function() {
-    throw new Error('sample error');
-  },
   subtracter: function(a, b) {
     return a - b;
   },
@@ -128,11 +125,10 @@ suite("SimplyThread", function() {
     });
   });
   return suite("Thread", function() {
-    var adderPromiseFailThread, adderPromiseThread, adderThread, contextReturnThread, contextThread, delayedPromiseThread, emitterThread, emptyThread, errThread, globalsInvokerThread, globalsThread, invokerThread, subtracterThread;
-    emptyThread = errThread = adderThread = adderPromiseThread = adderPromiseFailThread = delayedPromiseThread = subtracterThread = contextThread = contextReturnThread = globalsThread = globalsInvokerThread = invokerThread = emitterThread = null;
+    var adderPromiseFailThread, adderPromiseThread, adderThread, contextReturnThread, contextThread, delayedPromiseThread, emitterThread, emptyThread, globalsInvokerThread, globalsThread, invokerThread, subtracterThread;
+    emptyThread = adderThread = adderPromiseThread = adderPromiseFailThread = delayedPromiseThread = subtracterThread = contextThread = contextReturnThread = globalsThread = globalsInvokerThread = invokerThread = emitterThread = null;
     suiteSetup(function() {
       emptyThread = SimplyThread.create();
-      errThread = SimplyThread.create(FN.err);
       adderThread = SimplyThread.create(FN.adder);
       adderPromiseThread = SimplyThread.create(FN.adderPromise);
       adderPromiseFailThread = SimplyThread.create(FN.adderPromiseFail);
@@ -177,8 +173,36 @@ suite("SimplyThread", function() {
         });
       });
       test("if an error occured in the thread the run promise should be rejected", function() {
+        var errThread;
+        errThread = SimplyThread.create(function() {
+          throw new Error('sample error');
+        });
         return errThread.run()["catch"](function(err) {
-          return err.should.be.an('error');
+          err.should.be.an('error');
+          return errThread.kill();
+        });
+      });
+      test("if an error occured in the thread then an error of the same type will be thrown on the main thread (via promise reject)", function() {
+        var errThread;
+        errThread = SimplyThread.create(function() {
+          throw new Error('sample error');
+        });
+        return errThread.run()["catch"](function(err) {
+          err.should.be.an('error');
+          err.constructor.should.equal(Error);
+          return errThread.setFn(function() {
+            return someUndefinedVariable;
+          }).run()["catch"](function(err) {
+            err.should.be.an('error');
+            err.constructor.should.equal(ReferenceError);
+            return errThread.setFn(function() {
+              throw 'Non error object';
+            }).run()["catch"](function(err) {
+              err.should.not.be.an('error');
+              err.constructor.should.equal(String);
+              return errThread.kill();
+            });
+          });
         });
       });
       test("will return a rejected promise if the given function returned a rejected promise", function() {
@@ -198,7 +222,7 @@ suite("SimplyThread", function() {
           return result.should.equal('SIMPLYTHREAD');
         });
       });
-      return test("can return functions as results", function() {
+      test("can return functions as results", function() {
         var curryFn, promise;
         curryFn = function(string) {
           return function(string) {
@@ -213,9 +237,22 @@ suite("SimplyThread", function() {
           return result('simplythread').should.equal('SIMPLYTHREAD');
         });
       });
+      return test("invoking postMessage() from inside the thread should not cause any errors in the library", function() {
+        var menaceThread;
+        menaceThread = SimplyThread.create(function() {
+          postMessage("I'm a menace");
+          return "I'm a menace";
+        });
+        return expect(function() {
+          return menaceThread.run().then(function(result) {
+            result.should.be.a.string;
+            return menaceThread.kill();
+          });
+        }).not.to["throw"]();
+      });
     });
     suite(".on()", function() {
-      return test("Will register an event and its callback to be invoked every time threadEmit(event) is invoked from the thread's main function", function() {
+      test("Will register an event and its callback to be invoked every time threadEmit(event) is invoked from the thread's main function", function() {
         return new Promise((function(_this) {
           return function(resolve) {
             var emitCount;
@@ -248,6 +285,14 @@ suite("SimplyThread", function() {
           };
         })(this));
       });
+      return test("Will throw an error if the second argument isn't a function", function() {
+        expect(function() {
+          return emitterThread.on('someEvent');
+        }).to["throw"]();
+        return expect(function() {
+          return emitterThread.on('someEvent', {});
+        }).to["throw"]();
+      });
     });
     suite(".setFn()", function() {
       test("will execute empty threads normally if a function was later set with .setFn", function() {
@@ -266,7 +311,7 @@ suite("SimplyThread", function() {
           return notEmptyThread.kill();
         });
       });
-      return test("will use the second argument, if passed, as the context of the function", function() {
+      test("will use the second argument, if passed, as the context of the function", function() {
         var myContextReturnThread;
         myContextReturnThread = SimplyThread.create();
         return myContextReturnThread.setFn((function() {
@@ -278,6 +323,17 @@ suite("SimplyThread", function() {
           result.should.have.keys('prop');
           return result.prop.should.equal(5);
         });
+      });
+      return test("Will throw an error if the provided argument isn't a function", function() {
+        expect(function() {
+          return adderThread.setFn('someEvent');
+        }).to["throw"]();
+        expect(function() {
+          return adderThread.setFn({});
+        }).to["throw"]();
+        return expect(function() {
+          return adderThread.setFn();
+        }).to["throw"]();
       });
     });
     suite(".setGlobals()", function() {

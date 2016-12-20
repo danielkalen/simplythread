@@ -11,7 +11,7 @@ Thread = (@fn, @fnString)->
 
 # ==== Prototype =================================================================================
 Thread::init = ()->
-	`/* istanbul ignore next */`
+	### istanbul ignore next ###
 	if not SUPPORTS.workers
 		return false
 	else
@@ -21,11 +21,13 @@ Thread::init = ()->
 
 Thread::createURI = ()->
 	workerScriptContents = workerScript.toString().match(functionBodyRegEx)[1]
+	### istanbul ignore next ###
 	dependencies = SimplyThread.threadDeps or ''
 	dependencies += exposeStringifyFn.toString().match(functionBodyRegEx)[1]
 	dependencies += "var PRIMITIVE_TYPES = #{JSON.stringify(PRIMITIVE_TYPES)};"
 	dependencies += "var STRINGIFY_OPTS = #{JSON.stringify(STRINGIFY_OPTS)};"
 
+	### istanbul ignore next ###
 	if not SUPPORTS.promises
 		dependencies += promisePolyfill
 	
@@ -35,6 +37,7 @@ Thread::createURI = ()->
 
 
 Thread::openSocket = ()->
+	### istanbul ignore else ###
 	if @worker
 		@worker.addEventListener 'message', (e)=>
 			if e.data.ID and @socket.callbacks[e.data.ID] # e.data.ID will be a string if it's an event ID, otherwise it'll be a number
@@ -48,6 +51,8 @@ Thread::openSocket = ()->
 
 
 Thread::sendCommand = (command, payload)-> new Promise (resolve, reject)=>
+	ID = null # Declaration here in order for the istanbul ignore comment to work
+	### istanbul ignore else ###
 	if @worker
 		if command is 'run'
 			@socket.on ID=genTransactionID(), (data)-> switch data.status
@@ -58,7 +63,7 @@ Thread::sendCommand = (command, payload)-> new Promise (resolve, reject)=>
 
 
 	else # Fallback
-		`/* istanbul ignore next */`
+		### istanbul ignore next ###
 		switch command
 			when 'run'
 				@fn.apply(@context, payload) if @fn
@@ -71,7 +76,7 @@ Thread::sendCommand = (command, payload)-> new Promise (resolve, reject)=>
 
 
 
-`/* istanbul ignore next */`
+### istanbul ignore next ###
 threadEmit = (event, payload)-> # Fallback threadEmit function for env not supporting threads/workers
 	@socket.callbacks[event]?(payload)
 

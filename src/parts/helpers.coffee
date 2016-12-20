@@ -17,7 +17,7 @@ STRINGIFY_OPTS =
 currentID = 0
 genTransactionID = ()-> ++currentID
 
-`/* istanbul ignore next */`
+### istanbul ignore next ###
 exposeStringifyFn = ()->
 	import '../../node_modules/javascript-stringify-plus/javascript-stringify.js'
 	return
