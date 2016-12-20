@@ -1,6 +1,6 @@
 {
   "name": "simplythread",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "JS Threads: Run arbitrary functions in immediatly-spawned browser threads with an async workflow",
   "main": "dist/simplythread.pretty.js",
   "dependencies": {
