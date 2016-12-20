@@ -1,7 +1,7 @@
 functionBodyRegEx = /^\s*function\s*\(\)\s*\{\s*([\w\W]+)\s*\}\s*$/
 
 SUPPORTS = 
-	'workers': !!window.Worker and !!window.Blob and !!window.URL
+	'workers': !!window.Worker and !!window.Blob and (!!window.URL or !!window.webkitURL)
 	'promises': !!window.Promise
 
 PRIMITIVE_TYPES = 

@@ -30,7 +30,7 @@ var slice = [].slice;
   };
   functionBodyRegEx = /^\s*function\s*\(\)\s*\{\s*([\w\W]+)\s*\}\s*$/;
   SUPPORTS = {
-    'workers': !!window.Worker && !!window.Blob && !!window.URL,
+    'workers': !!window.Worker && !!window.Blob && (!!window.URL || !!window.webkitURL),
     'promises': !!window.Promise
   };
   PRIMITIVE_TYPES = {
