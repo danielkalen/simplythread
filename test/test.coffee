@@ -337,7 +337,7 @@ suite "SimplyThread", ()->
 			test "will reject .run() calls' promises if failed to load any of the provided scripts", ()-> if isLocalEnv then @skip() else
 				globalsThread
 					.setScripts ["#{basePath}/test/samplescript.js", "#{basePath}/test/nonexistent.js"]
-					.run('sampleScriptName')
+					.run('sampleScriptName').timeout(2000)
 						.then (result)-> # Should never executre
 							expect(true).to.be.false
 						.catch (err)->

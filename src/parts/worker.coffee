@@ -51,8 +51,8 @@ workerScript = ()->
 		
 		setScripts = (scripts)-> _scriptsLoaded = new Promise (finalResolve, finalReject)->
 			completedScripts = 0
-			
-			for script in scripts
+
+			for script in scripts then do (script)->
 				scriptPromise = switch typeof script
 					when 'function'
 						Promise.resolve script.call(self)

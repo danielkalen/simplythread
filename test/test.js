@@ -402,7 +402,7 @@ suite("SimplyThread", function() {
         if (isLocalEnv) {
           return this.skip();
         } else {
-          return globalsThread.setScripts([basePath + "/test/samplescript.js", basePath + "/test/nonexistent.js"]).run('sampleScriptName').then(function(result) {
+          return globalsThread.setScripts([basePath + "/test/samplescript.js", basePath + "/test/nonexistent.js"]).run('sampleScriptName').timeout(2000).then(function(result) {
             return expect(true).to.be["false"];
           })["catch"](function(err) {
             return expect(err).to.be.an.error;

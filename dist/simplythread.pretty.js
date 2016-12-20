@@ -212,10 +212,10 @@ var slice = [].slice;
       };
       setScripts = function(scripts) {
         return _scriptsLoaded = new Promise(function(finalResolve, finalReject) {
-          var completedScripts, i, len, script, scriptPromise;
+          var completedScripts, fn1, i, len, script;
           completedScripts = 0;
-          for (i = 0, len = scripts.length; i < len; i++) {
-            script = scripts[i];
+          fn1 = function(script) {
+            var scriptPromise;
             scriptPromise = (function() {
               switch (typeof script) {
                 case 'function':
@@ -235,11 +235,15 @@ var slice = [].slice;
                   return Promise.resolve();
               }
             })();
-            scriptPromise.then(function() {
+            return scriptPromise.then(function() {
               if (++completedScripts === scripts.length) {
                 return finalResolve();
               }
             })["catch"](finalReject);
+          };
+          for (i = 0, len = scripts.length; i < len; i++) {
+            script = scripts[i];
+            fn1(script);
           }
         });
       };
