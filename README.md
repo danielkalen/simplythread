@@ -2,7 +2,7 @@
 [![Build Status](https://travis-ci.org/danielkalen/simplythread.svg?branch=master)](https://travis-ci.org/danielkalen/simplythread)
 [![Coverage](.config/badges/coverage.png?raw=true)](https://github.com/danielkalen/simplythread)
 
-Execute arbitrary functions in immediatly-spawned browser threads with an async Promise workflow.
+Execute arbitrary functions in immediatly-spawned browser threads with an async Promise workflow. Relies on worker technology for threads and uses fallback methods for unsupported browsers.
 
 ## Installation
 `npm install simplythread --save`
@@ -102,7 +102,7 @@ Arguments:
 
 
 ### `thread.setScripts(scriptsArray)`
-Loads each external script provided in the `scriptsArray` on the thread's global scope.
+Loads each external script provided in the `scriptsArray` on the thread's global scope. The scripts will be loaded asynchronously and the thread will wait for all scripts to be loaded before running any following .run() calls. If one of the scripts fail to load (i.e. they have a status code >= 400), any following .run() calls will be immediatly rejected with the script load error.
 
 Example:
 ```javascript
@@ -117,8 +117,8 @@ thread.setScripts([function(){
 Arguments:
   - `scriptsArray` - array of scripts that the thread should attempt to load under its global scope. Possible values for scripts:
       - *URL path* - absolute path of a javascript file.
-      - *Module path* - a string representing the name of an NPM package that'll be loaded via [Browserify](http://wzrd.in), preceded by a 'MODULE:' prefix.
-      - *Function* - A function that'll be run on the thread's global scope.
+      - *Module path* - a string representing the name of an NPM package that'll be loaded via [Browserify](http://wzrd.in), preceded by a 'MODULE:' prefix. By default a module will be loaded on the thread's global scope under the package's name, but a custom name can be specified via 'MODULE:packageName#customName' syntax e.g. 'MODULE:lodash#_'.
+      - *Function* - A function that'll be run on the thread's global scope (i.e. the `this` keyword will resolve to the thread's global scope). If the function returns a promise, the thread will await until it is resolved before running any .run() calls.
 
 
 ### `thread.setGlobals(object)`
@@ -143,6 +143,10 @@ Arguments:
 ### `thread.kill()`
 Destroys the thread and its interface if it hasn't already been destroyed.
 
+
+
+## Things to consider
+You should generally delegate heavy/expensive computations to threads and avoid running tiny computations because transferring data between threads also takes a certain amount of time (depending on what you are transferring).
 
 
 
