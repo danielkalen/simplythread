@@ -504,7 +504,9 @@ var slice = [].slice;
     blob = new Blob([dependencies + workerScriptContents], {
       type: 'application/javascript'
     });
-    return URL.createObjectURL(blob);
+
+    /* istanbul ignore next */
+    return (window.URL || window.webkitURL).createObjectURL(blob);
   };
   Thread.prototype.openSocket = function() {
 

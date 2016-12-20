@@ -10,7 +10,7 @@ do ()->
 
 		
 		@remove = (threadInstance)->
-			threadIndex = threads.indexOf threadInstance			
+			threadIndex = threads.indexOf threadInstance
 			threads.splice threadIndex, 1
 
 

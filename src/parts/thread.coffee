@@ -33,7 +33,8 @@ Thread::createURI = ()->
 	
 	blob = new Blob([dependencies+workerScriptContents], {type:'application/javascript'});
 	
-	return URL.createObjectURL(blob)
+	### istanbul ignore next ###
+	return (window.URL or window.webkitURL).createObjectURL(blob)
 
 
 Thread::openSocket = ()->
