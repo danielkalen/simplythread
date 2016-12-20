@@ -51,13 +51,13 @@ helpers.patchWorkerMethods = (worker)->
 
 ### istanbul ignore next ###
 helpers.stringifyAsGlobals = (globals)->
-	globalsString = 'var '
+	globalsString = ''
 	keys = Object.keys(globals)
 
 	for key,index in keys
 		globalsString += "#{key}=#{@javascriptStringify(globals[key])}#{if index is keys.length-1 then ';' else ','} "
 	
-	return globalsString
+	return if globalsString then "var #{globalsString}" else globalsString
 
 
 helpers.stringifyPayload = (payload)->

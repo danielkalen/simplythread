@@ -44,7 +44,7 @@
     "test:karma": "karma start .config/karma.local.conf.coffee",
     "test:karma.sauce": "karma start .config/karma.sauce.conf.coffee",
     "test:sauce": "coffee .config/sauce-launch.coffee",
-    "test-serve": "http-server -p 9201 ./",
+    "test-serve": "http-server -p 9201 --cors ./",
     "sauce-connect": "sc -u simplythread -k 3fb731b0-65f9-4687-a8bd-081c19638028",
     "build": "npm run compile && npm run super-minify",
     "compile": "npm run compile:js && npm run compile:test",

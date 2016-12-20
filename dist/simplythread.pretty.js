@@ -550,13 +550,17 @@ var slice = [].slice;
   /* istanbul ignore next */
   helpers.stringifyAsGlobals = function(globals) {
     var globalsString, i, index, key, keys, len;
-    globalsString = 'var ';
+    globalsString = '';
     keys = Object.keys(globals);
     for (index = i = 0, len = keys.length; i < len; index = ++i) {
       key = keys[index];
       globalsString += key + "=" + (this.javascriptStringify(globals[key])) + (index === keys.length - 1 ? ';' : ',') + " ";
     }
-    return globalsString;
+    if (globalsString) {
+      return "var " + globalsString;
+    } else {
+      return globalsString;
+    }
   };
   helpers.stringifyPayload = function(payload) {
     var output;
