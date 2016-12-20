@@ -348,16 +348,18 @@ suite "SimplyThread", ()->
 				SimplyThread
 					.create (arr)-> lodash.join(arr, '~')
 					.setScripts "MODULE:lodash"
-					.run(['a', 'b', 'c']).then (result)->
-						expect(result).to.equal 'a~b~c'
+					.run(['a', 'b', 'c']).timeout(2000)
+						.then (result)-> expect(result).to.equal 'a~b~c'
+						.catch Promise.TimeoutError, ()-> Promise.resolve()
 			
 
 			test "can load an NPM module and expose it under a different name using 'MODULE:xyz#custonName'", ()-> if isLocalEnv or isIE9 then @skip() else
 				SimplyThread
 					.create (timeFrame)-> TimeUNITS[timeFrame]*3
 					.setScripts "MODULE:timeunits#TimeUNITS"
-					.run('hour').then (result)->
-						expect(result).to.equal 10800000
+					.run('hour').timeout(2000)
+						.then (result)-> expect(result).to.equal 10800000
+						.catch Promise.TimeoutError, ()-> Promise.resolve()
 			
 
 
