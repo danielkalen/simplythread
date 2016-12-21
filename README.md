@@ -25,7 +25,7 @@ var SimplyThread = require('simplythread');
 
 ## Example Usage
 ```javascript
-var thread = SimplyThread(function(a,b){
+var thread = SimplyThread.create(function(a,b){
     return a+b;
 });
 
